@@ -1,0 +1,16 @@
+# Day 1 has no external runtime dependencies (standard library only).
+# Later days will add, for example:
+# fastapi
+# uvicorn
+# langgraph
+# langchain-core
+# groq
+# pinecone-client
+# psycopg[binary]
+# pymongo
+# redis
+# rq
+# playwright
+# beautifulsoup4
+# ragas
+# langfuse

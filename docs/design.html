@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI SDR Agent — Autonomous Sales Development Rep · Design Document</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0b1020;
+    --bg-soft: #121a33;
+    --panel: #161f3d;
+    --panel-2: #1c2950;
+    --text: #e6ebff;
+    --muted: #9aa6c7;
+    --accent: #6ea8fe;
+    --accent-2: #7ef0c6;
+    --accent-3: #f6a96b;
+    --border: #26315c;
+    --code: #0e1530;
+    --shadow: 0 10px 30px rgba(0,0,0,0.35);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 80% -10%, #1b2750 0%, transparent 60%), var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  header.hero {
+    padding: 72px 0 48px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(110,168,254,0.08), transparent);
+  }
+  .badge {
+    display: inline-block; font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--accent-2); border: 1px solid var(--border); padding: 6px 12px; border-radius: 999px;
+    background: rgba(126,240,198,0.06);
+  }
+  h1 { font-size: 44px; line-height: 1.1; margin: 18px 0 10px; }
+  h1 .grad {
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .subtitle { font-size: 18px; color: var(--muted); max-width: 760px; }
+  .hero-meta { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip { font-size: 13px; color: var(--text); background: var(--panel); border: 1px solid var(--border);
+    padding: 6px 12px; border-radius: 8px; }
+
+  nav.toc {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(11,16,32,0.82); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  nav.toc .wrap { display: flex; gap: 6px; flex-wrap: wrap; padding-top: 12px; padding-bottom: 12px; }
+  nav.toc a { font-size: 13px; color: var(--muted); padding: 6px 10px; border-radius: 7px; }
+  nav.toc a:hover { background: var(--panel); color: var(--text); text-decoration: none; }
+
+  section { padding: 46px 0; border-bottom: 1px solid var(--border); }
+  h2 { font-size: 28px; margin: 0 0 6px; }
+  h2 .num { color: var(--accent); font-variant-numeric: tabular-nums; margin-right: 10px; }
+  h3 { font-size: 20px; margin: 28px 0 8px; color: var(--text); }
+  p { color: #ccd4ee; }
+  .lead { font-size: 17px; color: var(--muted); }
+
+  .grid { display: grid; gap: 16px; }
+  .grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 820px){ .grid.cols-2, .grid.cols-3 { grid-template-columns: 1fr; } h1{font-size:34px;} }
+
+  .card {
+    background: linear-gradient(180deg, var(--panel), var(--bg-soft));
+    border: 1px solid var(--border); border-radius: 14px; padding: 18px 18px;
+    box-shadow: var(--shadow);
+  }
+  .card h4 { margin: 0 0 6px; font-size: 16px; color: var(--accent-2); }
+  .card p { margin: 0; color: var(--muted); font-size: 14px; }
+
+  .pill { display:inline-block; font-size:12px; padding:3px 9px; border-radius:999px;
+    border:1px solid var(--border); color:var(--muted); margin: 2px 4px 2px 0;}
+
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--accent); font-weight: 600; }
+  tr:hover td { background: rgba(110,168,254,0.04); }
+
+  .mermaid {
+    background: var(--code); border: 1px solid var(--border); border-radius: 14px;
+    padding: 22px; margin: 18px 0; overflow-x: auto;
+  }
+  .diagram-title { font-size: 14px; color: var(--accent-3); text-transform: uppercase; letter-spacing: .1em; margin-top: 26px; }
+
+  code { background: var(--code); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; font-size: 13px; color: #cfe0ff; }
+  pre { background: var(--code); border: 1px solid var(--border); border-radius: 12px; padding: 16px; overflow-x:auto; }
+  pre code { border: 0; padding: 0; }
+
+  .note { border-left: 3px solid var(--accent); background: rgba(110,168,254,0.06);
+    padding: 12px 16px; border-radius: 0 10px 10px 0; color: var(--muted); margin: 14px 0; }
+  .callout-good { border-left: 3px solid var(--accent-2); background: rgba(126,240,198,0.06);
+    padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 14px 0; }
+
+  ul.clean { list-style: none; padding-left: 0; }
+  ul.clean li { padding: 6px 0 6px 26px; position: relative; color:#ccd4ee; }
+  ul.clean li::before { content: "▸"; color: var(--accent); position: absolute; left: 6px; }
+
+  .step { display:flex; gap:14px; padding:14px 0; border-bottom:1px dashed var(--border); }
+  .step:last-child{ border-bottom:0; }
+  .step .day { flex:0 0 92px; font-weight:700; color:var(--accent-2); }
+  .step .body { flex:1; }
+  .step .body b{ color:var(--text); }
+  .step.done .day::after { content:" ✓"; color: var(--accent-2); }
+
+  footer { padding: 40px 0 80px; color: var(--muted); font-size: 14px; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; margin-right:16px; font-size:13px; color:var(--muted);}
+  .dot { width:11px;height:11px;border-radius:3px;display:inline-block;}
+  .status { font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid var(--border); }
+  .status.impl { color: var(--accent-2); border-color:#1f5e44; background: rgba(126,240,198,0.08); }
+  .status.plan { color: var(--accent-3); border-color:#5e451f; background: rgba(246,169,107,0.08); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="badge">Design Document · v1.0</span>
+    <h1>AI SDR Agent<br/><span class="grad">Autonomous Sales Development Rep</span></h1>
+    <p class="subtitle">An open-source-first AI Sales Development Rep that finds leads, researches them, scores fit
+    against an Ideal Customer Profile, writes personalized outreach, handles replies, and books meetings — through an
+    orchestrated multi-agent workflow.</p>
+    <div class="hero-meta">
+      <span class="chip">Not a chatbot</span>
+      <span class="chip">Event-driven · async</span>
+      <span class="chip">Multi-agent (LangGraph)</span>
+      <span class="chip">RAG-powered research</span>
+      <span class="chip">Evaluated &amp; observable</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <a href="#overview">1 · Overview</a>
+    <a href="#concepts">2 · Core Concepts</a>
+    <a href="#stack">3 · Tech Stack</a>
+    <a href="#architecture">4 · Architecture</a>
+    <a href="#modules">5 · Modules &amp; Communication</a>
+    <a href="#dfd0">6 · DFD L0</a>
+    <a href="#dfd1">7 · DFD L1</a>
+    <a href="#dfd2">8 · DFD L2</a>
+    <a href="#flows">9 · Flow Diagrams</a>
+    <a href="#data">10 · Data Model</a>
+    <a href="#deploy">11 · Deployment</a>
+    <a href="#plan">12 · Build Plan</a>
+    <a href="#glossary">13 · Glossary</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <!-- 1. OVERVIEW -->
+  <section id="overview">
+    <h2><span class="num">01</span>Overview &amp; Rationale</h2>
+    <p class="lead">Why this project, and what it automates.</p>
+
+    <h3>The problem</h3>
+    <p>Outbound sales development is slow, repetitive, and hard to do well at scale. SDRs spend hours finding leads,
+    researching each one, writing personalized messages, chasing replies, and scheduling meetings. The work is
+    high-volume but quality-sensitive — generic blasts get ignored, and good personalization doesn't scale with
+    headcount.</p>
+
+    <h3>The solution</h3>
+    <p>AI SDR is an autonomous, multi-agent system. A business defines its <b>Ideal Customer Profile (ICP)</b>; the
+    platform then ingests and enriches matching leads, scores their fit, researches each one for context, writes a
+    tailored first message plus a follow-up sequence, classifies and responds to replies, and books meetings — while
+    tracking pipeline, message quality, and full observability.</p>
+
+    <div class="callout-good">
+      <b>Why it's strong for interviews &amp; learning:</b> it spans the full production AI lifecycle — ingestion +
+      enrichment, RAG-based research, multi-agent orchestration (LangGraph), async workers, evaluation (RAGAS), and
+      observability (Langfuse) — applied to a real, revenue-generating business process rather than a demo chatbot.
+    </div>
+
+    <div class="grid cols-3" style="margin-top:18px">
+      <div class="card"><h4>Find &amp; Score</h4><p>Ingest and enrich leads, then score each against the ICP with explanations.</p></div>
+      <div class="card"><h4>Research &amp; Write</h4><p>RAG research builds context; writer + reviewer agents craft personalized outreach.</p></div>
+      <div class="card"><h4>Reply &amp; Book</h4><p>Reply agent classifies intent and responds; scheduling agent books meetings.</p></div>
+    </div>
+  </section>
+
+  <!-- 2. CONCEPTS -->
+  <section id="concepts">
+    <h2><span class="num">02</span>Core Concepts</h2>
+    <p class="lead">The primitives the whole system revolves around.</p>
+    <div class="grid cols-3">
+      <div class="card"><h4>RawLead → Lead</h4><p>A lead as ingested from a source, then normalized + enriched (domain, seniority, region) and ready for scoring.</p></div>
+      <div class="card"><h4>ICP</h4><p>Ideal Customer Profile — target titles, seniorities, regions, industries used to score lead fit.</p></div>
+      <div class="card"><h4>ICP Score</h4><p>A fit score with human-readable reasons, used to prioritize who gets outreach.</p></div>
+      <div class="card"><h4>Campaign</h4><p>An outreach sequence (first message + follow-ups) targeting a set of leads.</p></div>
+      <div class="card"><h4>Message &amp; Reply</h4><p>An outbound message and the prospect's response, classified by intent (interested / objection / not now / book).</p></div>
+      <div class="card"><h4>Meeting</h4><p>A booked slot resulting from a positive reply, tracked through the pipeline.</p></div>
+    </div>
+  </section>
+
+  <!-- 3. STACK -->
+  <section id="stack">
+    <h2><span class="num">03</span>Technology Stack</h2>
+    <p class="lead">Open-source-first; hosted free tiers serve open models.</p>
+    <table>
+      <thead><tr><th>Layer</th><th>Technology</th><th>Why it's used here</th></tr></thead>
+      <tbody>
+        <tr><td>Language</td><td>Python</td><td>Ecosystem for data, scraping, and LLM tooling.</td></tr>
+        <tr><td>API</td><td>FastAPI</td><td>Define ICP, trigger campaigns, serve dashboard + webhooks for replies.</td></tr>
+        <tr><td>Scraping / ingestion</td><td>Playwright + BeautifulSoup</td><td>Collect and parse lead data from web sources.</td></tr>
+        <tr><td>Queue / workers</td><td>Redis + RQ</td><td>Process leads and outreach steps asynchronously and at scale.</td></tr>
+        <tr><td>Document DB</td><td>MongoDB</td><td>Raw scraped data and message logs (flexible schema).</td></tr>
+        <tr><td>SQL DB</td><td>PostgreSQL</td><td>Leads, campaigns, messages, meetings — relational integrity.</td></tr>
+        <tr><td>Vector DB</td><td>Pinecone</td><td>Lead memory + embeddings for research-agent RAG.</td></tr>
+        <tr><td>LLM</td><td>Groq (Llama / Qwen)</td><td>Fast inference for research, writing, reviewing, reply classification.</td></tr>
+        <tr><td>Orchestration / agents</td><td>LangGraph</td><td>Stateful multi-agent workflow: research → write → review → send → reply.</td></tr>
+        <tr><td>Evaluation</td><td>RAGAS</td><td>Score message quality / relevance / personalization against references.</td></tr>
+        <tr><td>Observability</td><td>Langfuse / Phoenix</td><td>Trace every agent step, LLM call, latency, and failures.</td></tr>
+        <tr><td>Packaging</td><td>Docker + Compose</td><td>Reproducible local + cloud runs of all services.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 4. ARCHITECTURE -->
+  <section id="architecture">
+    <h2><span class="num">04</span>System Architecture</h2>
+    <p class="lead">Event-driven pipeline: <b>Ingest &amp; Score → Research &amp; Write → Send → Handle Reply → Book</b>, wrapped by Eval &amp; Observability.</p>
+
+    <div class="legend" style="margin:10px 0 4px">
+      <span><span class="dot" style="background:#6ea8fe"></span>Services / APIs</span>
+      <span><span class="dot" style="background:#7ef0c6"></span>Agents (LangGraph)</span>
+      <span><span class="dot" style="background:#f6a96b"></span>Data stores</span>
+      <span><span class="dot" style="background:#c39bff"></span>Cross-cutting</span>
+    </div>
+
+    <div class="mermaid">
+flowchart TB
+    USER(["Business / User defines ICP"])
+
+    subgraph API["API Layer (FastAPI)"]
+      EP["REST endpoints + reply webhook"]
+    end
+
+    subgraph ING["Ingestion"]
+      SC["Scraper workers (Playwright + BS4)"]
+      EN["Enrichment + ICP scoring"]
+    end
+
+    subgraph QUEUE["Async Backbone"]
+      R[("Redis")]
+      WK["RQ workers"]
+    end
+
+    subgraph AGENTS["Orchestration (LangGraph + Groq)"]
+      RES["Research agent (RAG)"]
+      WRI["Writer agent"]
+      REV["Reviewer agent"]
+      RPL["Reply agent"]
+      SCHED["Scheduling agent"]
+    end
+
+    subgraph STORE["Data Stores"]
+      PG[("PostgreSQL leads / campaigns / meetings")]
+      MG[("MongoDB raw data / message logs")]
+      PC[("Pinecone lead memory")]
+    end
+
+    subgraph XCUT["Cross-cutting"]
+      RAG["RAGAS evaluation"]
+      OBS["Langfuse / Phoenix"]
+      DASH["Dashboard"]
+    end
+
+    USER --> EP
+    EP --> SC --> EN --> R --> WK
+    WK --> PG
+    WK --> MG
+    EN --> PC
+
+    EP --> RES --> PC
+    RES --> WRI --> REV --> RPL
+    RES --> Groq[("Groq")]
+    WRI --> Groq
+    REV --> Groq
+    RPL --> Groq
+    SCHED --> PG
+
+    AGENTS --> RAG
+    AGENTS --> OBS
+    EP --> DASH
+    PG --> DASH
+
+    style EP fill:#16224a,stroke:#6ea8fe
+    style RES fill:#13301f,stroke:#7ef0c6
+    style WRI fill:#13301f,stroke:#7ef0c6
+    style REV fill:#13301f,stroke:#7ef0c6
+    style RPL fill:#13301f,stroke:#7ef0c6
+    style SCHED fill:#13301f,stroke:#7ef0c6
+    style PG fill:#2a2113,stroke:#f6a96b
+    style MG fill:#2a2113,stroke:#f6a96b
+    style PC fill:#2a2113,stroke:#f6a96b
+    style OBS fill:#241a33,stroke:#c39bff
+    style RAG fill:#241a33,stroke:#c39bff
+    style DASH fill:#241a33,stroke:#c39bff
+    </div>
+
+    <div class="note">Ingestion, scoring, and outreach are decoupled by the Redis queue so a long research/write step
+    never blocks ingestion, and reply handling can run independently as webhooks arrive.</div>
+  </section>
+
+  <!-- 5. MODULES -->
+  <section id="modules">
+    <h2><span class="num">05</span>Modules &amp; How They Communicate</h2>
+    <p class="lead">Responsibilities and the contract between modules. Status reflects the current build.</p>
+
+    <table>
+      <thead><tr><th>Module</th><th>Responsibility</th><th>Consumes</th><th>Produces</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td><b>sources</b></td><td>Load raw leads (sample / file / scrape)</td><td>Source data</td><td><code>RawLead</code> list</td><td><span class="status impl">Day 1</span></td></tr>
+        <tr><td><b>enrich</b></td><td>Derive domain, seniority, region; ICP score</td><td><code>RawLead</code></td><td><code>Lead</code> (scored)</td><td><span class="status impl">Day 1</span></td></tr>
+        <tr><td><b>storage</b></td><td>Persist raw + processed leads</td><td><code>Lead</code></td><td>JSONL (→ Postgres/Mongo)</td><td><span class="status impl">Day 1</span></td></tr>
+        <tr><td><b>reporting</b></td><td>Summarize ingestion run</td><td><code>Lead</code> list</td><td>Markdown report</td><td><span class="status impl">Day 1</span></td></tr>
+        <tr><td><b>research agent</b></td><td>Build lead context via RAG</td><td>Lead + Pinecone</td><td>Research profile</td><td><span class="status plan">Day 3</span></td></tr>
+        <tr><td><b>writer agent</b></td><td>Draft personalized message + sequence</td><td>Research profile</td><td>Draft message</td><td><span class="status plan">Day 4</span></td></tr>
+        <tr><td><b>reviewer agent</b></td><td>Check quality/tone before send</td><td>Draft message</td><td>Approved / revised</td><td><span class="status plan">Day 4</span></td></tr>
+        <tr><td><b>reply agent</b></td><td>Classify reply intent &amp; respond</td><td>Inbound reply</td><td>Intent + response</td><td><span class="status plan">Day 5</span></td></tr>
+        <tr><td><b>scheduling agent</b></td><td>Book meeting on positive intent</td><td>Reply intent</td><td>Meeting record</td><td><span class="status plan">Day 5</span></td></tr>
+        <tr><td><b>evaluator</b></td><td>Score message quality</td><td>Messages</td><td>RAGAS scores</td><td><span class="status plan">Day 6</span></td></tr>
+        <tr><td><b>observability</b></td><td>Trace all agent/LLM activity</td><td>Spans</td><td>Traces, metrics</td><td><span class="status plan">Day 6</span></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Communication style</h3>
+    <ul class="clean">
+      <li><b>Asynchronous (queue-based):</b> ingestion → enrichment → scoring → persistence run as Redis/RQ jobs with retries.</li>
+      <li><b>Synchronous (request/response):</b> dashboard ↔ API for defining ICP, launching campaigns, and reading pipeline.</li>
+      <li><b>Stateful graph:</b> LangGraph passes a shared state (lead, research, draft, review, reply) between agent nodes.</li>
+      <li><b>Webhook (inbound):</b> prospect replies arrive via webhook → reply agent → scheduling agent.</li>
+      <li><b>Side-channel (tracing):</b> every node emits spans to Langfuse without affecting the main flow.</li>
+    </ul>
+  </section>
+
+  <!-- 6. DFD L0 -->
+  <section id="dfd0">
+    <h2><span class="num">06</span>Data Flow Diagram — Level 0 (Context)</h2>
+    <p class="lead">The platform as a single process and its external entities.</p>
+    <div class="mermaid">
+flowchart LR
+    USER(["Business / Sales user"])
+    SRC(["Lead sources (web / file)"])
+    PROSPECT(["Prospect"])
+    CAL(["Calendar / email system"])
+
+    SDR(("0 · AI SDR Platform"))
+
+    USER -->|ICP + campaign config| SDR
+    SRC -->|raw lead data| SDR
+    SDR -->|pipeline, metrics, drafts| USER
+    SDR -->|personalized outreach| PROSPECT
+    PROSPECT -->|reply| SDR
+    SDR -->|meeting booking| CAL
+    CAL -->|confirmation| SDR
+
+    style SDR fill:#13233f,stroke:#6ea8fe,stroke-width:2px
+    </div>
+    <div class="note">Level 0 shows the boundary: the system consumes ICP config + raw leads, sends outreach to
+    prospects, ingests replies, and books meetings via the calendar/email system.</div>
+  </section>
+
+  <!-- 7. DFD L1 -->
+  <section id="dfd1">
+    <h2><span class="num">07</span>Data Flow Diagram — Level 1</h2>
+    <p class="lead">Major processes and data stores.</p>
+    <div class="mermaid">
+flowchart TB
+    USER(["Sales user"])
+    SRC(["Lead sources"])
+    PROSPECT(["Prospect"])
+
+    P1["1 · Ingest &amp; Enrich"]
+    P2["2 · Score against ICP"]
+    P3["3 · Research lead (RAG)"]
+    P4["4 · Write &amp; review outreach"]
+    P5["5 · Send &amp; handle reply"]
+    P6["6 · Schedule meeting"]
+    P7["7 · Evaluate &amp; observe"]
+
+    D1[("D1 Raw data / logs · Mongo")]
+    D2[("D2 Leads / campaigns · Postgres")]
+    D3[("D3 Lead memory · Pinecone")]
+    D4[("D4 Meetings / pipeline · Postgres")]
+
+    SRC --> P1 --> D1
+    P1 --> P2
+    USER -->|ICP| P2 --> D2
+    D2 --> P3
+    P3 --> D3
+    D3 --> P3
+    P3 --> P4 --> P5
+    P5 -->|message| PROSPECT
+    PROSPECT -->|reply| P5
+    P5 -->|positive intent| P6 --> D4
+    P5 --> D1
+    D2 --> P7
+    D4 --> P7
+    P7 -->|scores &amp; traces| USER
+
+    style P1 fill:#16224a,stroke:#6ea8fe
+    style P2 fill:#16224a,stroke:#6ea8fe
+    style P3 fill:#13301f,stroke:#7ef0c6
+    style P4 fill:#13301f,stroke:#7ef0c6
+    style P5 fill:#13301f,stroke:#7ef0c6
+    style P6 fill:#13301f,stroke:#7ef0c6
+    style P7 fill:#241a33,stroke:#c39bff
+    </div>
+  </section>
+
+  <!-- 8. DFD L2 -->
+  <section id="dfd2">
+    <h2><span class="num">08</span>Data Flow Diagram — Level 2</h2>
+    <p class="lead">Zooming into the two most complex processes.</p>
+
+    <div class="diagram-title">8.1 — Process 1+2: Ingest, Enrich &amp; Score (exploded · implemented Day 1)</div>
+    <div class="mermaid">
+flowchart TB
+    SRC(["Lead source"])
+    D1[("D1 Raw JSONL")]
+    D2[("D2 Processed leads")]
+
+    P11["1.1 Load raw leads"]
+    P12["1.2 Normalize fields"]
+    P13["1.3 Derive company domain"]
+    P14["1.4 Derive seniority (title)"]
+    P15["1.5 Derive region (location)"]
+    P21["2.1 Apply ICP rules"]
+    P22["2.2 Compute score + reasons"]
+    P23["2.3 Write report"]
+
+    SRC --> P11 --> D1
+    P11 --> P12 --> P13 --> P14 --> P15 --> P21
+    P21 --> P22 --> D2
+    P22 --> P23
+
+    style P21 fill:#16224a,stroke:#6ea8fe
+    style P22 fill:#16224a,stroke:#6ea8fe
+    </div>
+
+    <div class="diagram-title">8.2 — Process 4+5: Outreach &amp; Reply Handling (exploded)</div>
+    <div class="mermaid">
+flowchart TB
+    D3[("D3 Lead memory")]
+    D2[("D2 Leads / campaigns")]
+    PROSPECT(["Prospect"])
+    D1[("D1 Message logs")]
+
+    P41["4.1 Retrieve research context"]
+    P42["4.2 Draft first message (Groq)"]
+    P43["4.3 Review tone / quality"]
+    P44{"4.4 Approved?"}
+    P51["5.1 Send message"]
+    P52["5.2 Receive reply"]
+    P53["5.3 Classify intent (Groq)"]
+    P54{"5.4 Intent?"}
+    P55["5.5 Compose response"]
+    P56["5.6 Hand off to scheduling"]
+
+    D3 --> P41 --> P42 --> P43 --> P44
+    P44 -->|no| P42
+    P44 -->|yes| P51 --> PROSPECT
+    PROSPECT --> P52 --> P53 --> P54
+    P54 -->|objection / not now| P55 --> P51
+    P54 -->|interested / book| P56
+    P51 --> D1
+    P52 --> D1
+    D2 --> P41
+
+    style P42 fill:#13301f,stroke:#7ef0c6
+    style P43 fill:#13301f,stroke:#7ef0c6
+    style P53 fill:#13301f,stroke:#7ef0c6
+    style P44 fill:#2a2113,stroke:#f6a96b
+    style P54 fill:#2a2113,stroke:#f6a96b
+    </div>
+  </section>
+
+  <!-- 9. FLOWS -->
+  <section id="flows">
+    <h2><span class="num">09</span>Flow Diagrams (Sequence)</h2>
+    <p class="lead">End-to-end timing across modules for the core journeys.</p>
+
+    <div class="diagram-title">9.1 — Ingestion &amp; scoring (Day 1, implemented)</div>
+    <div class="mermaid">
+sequenceDiagram
+    autonumber
+    participant CLI as pipeline.py
+    participant SRC as ingestion.sources
+    participant ENR as ingestion.enrich
+    participant ST as storage
+    participant RP as reporting
+
+    CLI->>SRC: load_raw_leads(source, input)
+    SRC-->>CLI: list[RawLead]
+    CLI->>ENR: enrich_leads(raws, ICP)
+    ENR-->>CLI: list[Lead] (scored)
+    CLI->>ST: write raw + enriched JSONL
+    CLI->>RP: write_report(leads)
+    RP-->>CLI: ingestion_report.md
+    </div>
+
+    <div class="diagram-title">9.2 — Outreach workflow (LangGraph)</div>
+    <div class="mermaid">
+sequenceDiagram
+    autonumber
+    participant API as FastAPI
+    participant Q as Redis / RQ
+    participant G as LangGraph
+    participant RES as Research Agent
+    participant PC as Pinecone
+    participant WRI as Writer Agent
+    participant REV as Reviewer Agent
+    participant LLM as Groq
+    participant PG as Postgres
+    participant OB as Langfuse
+
+    API->>Q: enqueue outreach(lead)
+    Q->>G: start graph
+    G->>RES: research(lead)
+    RES->>PC: similarity search (lead memory)
+    PC-->>RES: relevant context
+    RES->>LLM: synthesize profile
+    LLM-->>RES: research profile
+    G->>WRI: write(profile)
+    WRI->>LLM: draft message
+    LLM-->>WRI: draft
+    G->>REV: review(draft)
+    REV->>LLM: critique / revise
+    LLM-->>REV: approved message
+    G->>PG: persist message + campaign
+    G-->>OB: emit trace
+    </div>
+
+    <div class="diagram-title">9.3 — Reply handling &amp; scheduling</div>
+    <div class="mermaid">
+sequenceDiagram
+    autonumber
+    participant P as Prospect
+    participant API as FastAPI (webhook)
+    participant RPL as Reply Agent
+    participant LLM as Groq
+    participant SCH as Scheduling Agent
+    participant PG as Postgres
+    participant OB as Langfuse
+
+    P->>API: reply (email/LinkedIn)
+    API->>RPL: classify(reply)
+    RPL->>LLM: intent classification
+    LLM-->>RPL: intent (interested / objection / not now / book)
+    alt interested or book
+      RPL->>SCH: request meeting
+      SCH->>PG: create meeting + update pipeline
+      SCH-->>P: propose slots
+    else objection or not now
+      RPL->>LLM: compose tailored response
+      LLM-->>RPL: response
+      RPL-->>P: send response
+    end
+    RPL-->>OB: emit trace
+    </div>
+  </section>
+
+  <!-- 10. DATA MODEL -->
+  <section id="data">
+    <h2><span class="num">10</span>Data Model</h2>
+    <p class="lead">Core entities and relationships (Postgres structured layer).</p>
+    <div class="mermaid">
+erDiagram
+    ICP ||--o{ LEAD : scores
+    LEAD ||--o{ CAMPAIGN_MEMBER : targeted_in
+    CAMPAIGN ||--o{ CAMPAIGN_MEMBER : includes
+    CAMPAIGN_MEMBER ||--o{ MESSAGE : sends
+    MESSAGE ||--o{ REPLY : receives
+    REPLY ||--o{ MEETING : may_create
+    LEAD ||--o{ RESEARCH_PROFILE : has
+    MESSAGE ||--o{ EVAL_SCORE : scored_by
+
+    ICP {
+      uuid id PK
+      jsonb target_titles
+      jsonb target_seniorities
+      jsonb target_regions
+      jsonb target_industries
+    }
+    LEAD {
+      uuid id PK
+      string full_name
+      string title
+      string company
+      string company_domain
+      string region
+      string seniority
+      int icp_score
+      jsonb icp_reasons
+    }
+    RESEARCH_PROFILE {
+      uuid id PK
+      uuid lead_id FK
+      text summary
+      jsonb signals
+    }
+    CAMPAIGN {
+      uuid id PK
+      string name
+      string status
+    }
+    CAMPAIGN_MEMBER {
+      uuid id PK
+      uuid campaign_id FK
+      uuid lead_id FK
+      string stage
+    }
+    MESSAGE {
+      uuid id PK
+      uuid campaign_member_id FK
+      int step
+      text body
+      timestamp sent_at
+    }
+    REPLY {
+      uuid id PK
+      uuid message_id FK
+      string intent
+      text body
+    }
+    MEETING {
+      uuid id PK
+      uuid reply_id FK
+      timestamp scheduled_at
+      string status
+    }
+    EVAL_SCORE {
+      uuid id PK
+      uuid message_id FK
+      float quality
+      float personalization
+    }
+    </div>
+  </section>
+
+  <!-- 11. DEPLOYMENT -->
+  <section id="deploy">
+    <h2><span class="num">11</span>Deployment Topology</h2>
+    <p class="lead">Containerized services, local via Compose, cloud via managed services.</p>
+    <div class="mermaid">
+flowchart LR
+    subgraph LOCAL["Docker Compose (dev)"]
+      A1["api"]
+      A2["scraper-worker"]
+      A3["outreach-worker"]
+      A4["dashboard"]
+      A5[("redis")]
+      A6[("mongo")]
+      A7[("postgres")]
+    end
+    subgraph CLOUD["Cloud (prod)"]
+      C1["Cloud Run · api"]
+      C2["Cloud Run · workers"]
+      C3[("Managed Redis")]
+      C4[("MongoDB Atlas")]
+      C5[("Cloud SQL Postgres")]
+      C6[("Pinecone")]
+    end
+    EXT["Groq · Langfuse"]
+    LOCAL -->|docker build / push| CLOUD
+    CLOUD --- EXT
+
+    style C1 fill:#16224a,stroke:#6ea8fe
+    style C2 fill:#13301f,stroke:#7ef0c6
+    </div>
+    <ul class="clean">
+      <li>Each service has its own <code>Dockerfile</code>; <code>docker-compose.yml</code> wires them for local dev.</li>
+      <li>Scraper and outreach workers scale independently of the API.</li>
+      <li>Secrets read from environment (see <code>config.py</code>); never committed.</li>
+    </ul>
+  </section>
+
+  <!-- 12. PLAN -->
+  <section id="plan">
+    <h2><span class="num">12</span>7-Day Build Plan</h2>
+    <p class="lead">Each day ends with something runnable. Day 1 is implemented.</p>
+    <div class="card">
+      <div class="step done"><div class="day">Day 1</div><div class="body"><b>Ingestion + enrichment + ICP scoring.</b> Dependency-free pipeline turning raw leads into enriched, scored leads with a report. <span class="status impl">Implemented</span></div></div>
+      <div class="step"><div class="day">Day 2</div><div class="body"><b>Databases.</b> PostgreSQL (leads, campaigns) + MongoDB (raw data, logs) persistence.</div></div>
+      <div class="step"><div class="day">Day 3</div><div class="body"><b>Vector memory + research agent.</b> Pinecone lead memory and a RAG research agent (Groq).</div></div>
+      <div class="step"><div class="day">Day 4</div><div class="body"><b>Outreach workflow.</b> LangGraph: research → write → review → send.</div></div>
+      <div class="step"><div class="day">Day 5</div><div class="body"><b>Replies + scheduling + async.</b> Reply agent, scheduling agent, Redis async workers.</div></div>
+      <div class="step"><div class="day">Day 6</div><div class="body"><b>Eval &amp; observability.</b> RAGAS message-quality evals + Langfuse/Phoenix tracing.</div></div>
+      <div class="step"><div class="day">Day 7</div><div class="body"><b>Ship.</b> Dockerize, deploy, dashboard, README polish, demo.</div></div>
+    </div>
+  </section>
+
+  <!-- 13. GLOSSARY -->
+  <section id="glossary">
+    <h2><span class="num">13</span>Glossary</h2>
+    <table>
+      <tbody>
+        <tr><td><b>SDR</b></td><td>Sales Development Rep — role focused on outbound prospecting and qualification.</td></tr>
+        <tr><td><b>ICP</b></td><td>Ideal Customer Profile — the definition of a good-fit prospect.</td></tr>
+        <tr><td><b>Lead enrichment</b></td><td>Deriving extra attributes (domain, seniority, region) from raw lead data.</td></tr>
+        <tr><td><b>RAG</b></td><td>Retrieval-augmented generation — fetch relevant context before generating.</td></tr>
+        <tr><td><b>RAGAS</b></td><td>Framework to score quality / relevance / faithfulness of LLM outputs.</td></tr>
+        <tr><td><b>DFD</b></td><td>Data Flow Diagram — levels 0/1/2 show progressively more detail.</td></tr>
+        <tr><td><b>HITL</b></td><td>Human-in-the-loop — optional human review/approval before sending.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><b>AI SDR Agent</b> · Design document v1.0 · Day 1 (ingestion + ICP scoring) implemented; remaining days
+    add storage, RAG research, outreach orchestration, reply handling, evaluation, and deployment.</p>
+  </div>
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      background: '#0e1530',
+      primaryColor: '#16224a',
+      primaryTextColor: '#e6ebff',
+      primaryBorderColor: '#6ea8fe',
+      lineColor: '#6ea8fe',
+      secondaryColor: '#13301f',
+      tertiaryColor: '#241a33',
+      fontSize: '14px'
+    },
+    flowchart: { curve: 'basis', useMaxWidth: true },
+    sequence: { useMaxWidth: true }
+  });
+</script>
+</body>
+</html>
