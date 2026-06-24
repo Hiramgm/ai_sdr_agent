@@ -2,7 +2,7 @@
 
 We use psycopg 3 with plain SQL so the schema and queries stay explicit and
 easy to reason about. The `leads` table mirrors the `Lead` dataclass; the
-`campaigns` table is a small scaffold we will grow in later days.
+`campaigns` table is a small scaffold we will grow later.
 """
 
 from __future__ import annotations

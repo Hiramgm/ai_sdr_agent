@@ -1,6 +1,6 @@
 # Architecture
 
-This document shows both the **target system** and the **current Day 1 build**. The diagrams use Mermaid, which renders automatically on GitHub and in most editors.
+This document shows both the **target system** and the **current build**. The diagrams use Mermaid, which renders automatically on GitHub and in most editors.
 
 ## Target System (Full Build)
 
@@ -60,7 +60,7 @@ flowchart TB
     api --> dashboard[Dashboard / Frontend]
 ```
 
-## Day 1 Build (Implemented)
+## Ingestion Build (Implemented)
 
 ```mermaid
 flowchart LR
@@ -73,7 +73,7 @@ flowchart LR
     score --> report[reports/ingestion_report.md]
 ```
 
-## Data Flow (Day 1)
+## Data Flow (Ingestion)
 
 ```mermaid
 sequenceDiagram
@@ -92,14 +92,14 @@ sequenceDiagram
     RP-->>CLI: ingestion_report.md
 ```
 
-## How The Days Map To The Diagram
+## How Milestones Map To The Diagram
 
-| Day | Component added |
+| Status | Component |
 | --- | --- |
-| 1 | Ingestion + enrichment + ICP scoring |
-| 2 | PostgreSQL + MongoDB storage |
-| 3 | Pinecone vector memory + research agent (RAG) |
-| 4 | LangGraph outreach workflow |
-| 5 | Reply + scheduling agents + Redis async workers |
-| 6 | RAGAS evaluation + Langfuse/Phoenix observability |
-| 7 | Docker + cloud deployment + dashboard |
+| Built | Ingestion + enrichment + ICP scoring |
+| Built | PostgreSQL + MongoDB storage |
+| Planned | Pinecone vector memory + research agent (RAG) |
+| Planned | LangGraph outreach workflow |
+| Planned | Reply + scheduling agents + Redis async workers |
+| Planned | RAGAS evaluation + Langfuse/Phoenix observability |
+| Planned | Docker + cloud deployment + dashboard |

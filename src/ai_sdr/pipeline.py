@@ -12,7 +12,7 @@ from .storage import write_leads, write_raw_leads
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="AI SDR lead ingestion pipeline (Day 1).")
+    parser = argparse.ArgumentParser(description="AI SDR lead ingestion pipeline.")
     parser.add_argument(
         "--source",
         choices=["sample", "file"],

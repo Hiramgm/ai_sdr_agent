@@ -2,7 +2,7 @@
 
 An open-source-first AI Sales Development Rep. It finds leads, researches them, scores fit, writes personalized outreach, handles replies, and books meetings, all through an orchestrated multi-agent workflow.
 
-This repository is built in public, one day at a time, as a production-style project covering ingestion, RAG, agentic orchestration, evaluation, observability, and cloud deployment.
+This repository is a production-style project covering ingestion, RAG, agentic orchestration, evaluation, observability, and cloud deployment.
 
 ## Product Vision
 
@@ -17,7 +17,7 @@ Businesses define their ideal customer. The system then:
 
 ## Architecture (Target)
 
-See [docs/architecture.md](docs/architecture.md) for full diagrams (target system, Day 1 build, and data flow).
+See [docs/architecture.md](docs/architecture.md) for full diagrams (target system, current build, and data flow).
 
 Event-driven, multi-agent system with async workers:
 
@@ -47,17 +47,17 @@ Event-driven, multi-agent system with async workers:
 
 Note: Pinecone and Groq are hosted services on free tiers; the models served are open source and everything we ship is portable.
 
-## Build Plan
+## Roadmap
 
-- Day 1: Lead ingestion + enrichment + ICP scoring.
-- Day 2: Databases — PostgreSQL (leads, campaigns) + MongoDB (raw, logs) (this commit).
-- Day 3: Pinecone vector memory + research agent (RAG, Groq).
-- Day 4: LangGraph outreach workflow (research -> write -> review -> send).
-- Day 5: Reply handling + scheduling agent + Redis async workers.
-- Day 6: RAGAS message-quality evals + Langfuse/Phoenix observability.
-- Day 7: Dockerize, deploy, dashboard, README polish, demo.
+- [x] Lead ingestion + enrichment + ICP scoring.
+- [x] Databases — PostgreSQL (leads, campaigns) + MongoDB (raw, logs).
+- [ ] Pinecone vector memory + research agent (RAG, Groq).
+- [ ] LangGraph outreach workflow (research -> write -> review -> send).
+- [ ] Reply handling + scheduling agent + Redis async workers.
+- [ ] RAGAS message-quality evals + Langfuse/Phoenix observability.
+- [ ] Dockerize, deploy, and dashboard.
 
-## Day 1: What Is Implemented
+## Ingestion &amp; ICP Scoring
 
 A runnable, dependency-free ingestion pipeline that turns raw leads into enriched, scored leads.
 
@@ -115,9 +115,9 @@ The file can be JSON or CSV with these columns:
 
 `full_name, title, company, location, email, linkedin_url, company_website, industry, source`
 
-## Day 2: Database Persistence
+## Database Persistence
 
-Day 2 adds **polyglot persistence** — the right database for each kind of data:
+This adds **polyglot persistence** — the right database for each kind of data:
 
 - **PostgreSQL** stores structured, queryable records (`leads`, plus a `campaigns`
   scaffold). The `leads` table mirrors the `Lead` dataclass; `icp_reasons` is a
@@ -148,12 +148,12 @@ Configure `.env`:
 PYTHONPATH=src .venv/bin/python -m ai_sdr.pipeline --source sample --persist
 ```
 
-Without `--persist`, the pipeline behaves exactly as on Day 1 (JSONL + report
-only). With `--persist`, it additionally upserts leads into PostgreSQL and stores
-raw leads + a run log in MongoDB. The database drivers are imported lazily, so a
-non-persisting run requires no database at all.
+Without `--persist`, the pipeline behaves as the ingestion-only path (JSONL +
+report only). With `--persist`, it additionally upserts leads into PostgreSQL and
+stores raw leads + a run log in MongoDB. The database drivers are imported lazily,
+so a non-persisting run requires no database at all.
 
-### Code Layout (Day 2)
+### Code Layout
 
 ```text
 src/ai_sdr/db/

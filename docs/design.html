@@ -325,17 +325,17 @@ flowchart TB
     <table>
       <thead><tr><th>Module</th><th>Responsibility</th><th>Consumes</th><th>Produces</th><th>Status</th></tr></thead>
       <tbody>
-        <tr><td><b>sources</b></td><td>Load raw leads (sample / file / scrape)</td><td>Source data</td><td><code>RawLead</code> list</td><td><span class="status impl">Day 1</span></td></tr>
-        <tr><td><b>enrich</b></td><td>Derive domain, seniority, region; ICP score</td><td><code>RawLead</code></td><td><code>Lead</code> (scored)</td><td><span class="status impl">Day 1</span></td></tr>
-        <tr><td><b>storage</b></td><td>Persist raw + processed leads</td><td><code>Lead</code></td><td>JSONL (→ Postgres/Mongo)</td><td><span class="status impl">Day 1</span></td></tr>
-        <tr><td><b>reporting</b></td><td>Summarize ingestion run</td><td><code>Lead</code> list</td><td>Markdown report</td><td><span class="status impl">Day 1</span></td></tr>
-        <tr><td><b>research agent</b></td><td>Build lead context via RAG</td><td>Lead + Pinecone</td><td>Research profile</td><td><span class="status plan">Day 3</span></td></tr>
-        <tr><td><b>writer agent</b></td><td>Draft personalized message + sequence</td><td>Research profile</td><td>Draft message</td><td><span class="status plan">Day 4</span></td></tr>
-        <tr><td><b>reviewer agent</b></td><td>Check quality/tone before send</td><td>Draft message</td><td>Approved / revised</td><td><span class="status plan">Day 4</span></td></tr>
-        <tr><td><b>reply agent</b></td><td>Classify reply intent &amp; respond</td><td>Inbound reply</td><td>Intent + response</td><td><span class="status plan">Day 5</span></td></tr>
-        <tr><td><b>scheduling agent</b></td><td>Book meeting on positive intent</td><td>Reply intent</td><td>Meeting record</td><td><span class="status plan">Day 5</span></td></tr>
-        <tr><td><b>evaluator</b></td><td>Score message quality</td><td>Messages</td><td>RAGAS scores</td><td><span class="status plan">Day 6</span></td></tr>
-        <tr><td><b>observability</b></td><td>Trace all agent/LLM activity</td><td>Spans</td><td>Traces, metrics</td><td><span class="status plan">Day 6</span></td></tr>
+        <tr><td><b>sources</b></td><td>Load raw leads (sample / file / scrape)</td><td>Source data</td><td><code>RawLead</code> list</td><td><span class="status impl">Built</span></td></tr>
+        <tr><td><b>enrich</b></td><td>Derive domain, seniority, region; ICP score</td><td><code>RawLead</code></td><td><code>Lead</code> (scored)</td><td><span class="status impl">Built</span></td></tr>
+        <tr><td><b>storage</b></td><td>Persist raw + processed leads</td><td><code>Lead</code></td><td>JSONL (→ Postgres/Mongo)</td><td><span class="status impl">Built</span></td></tr>
+        <tr><td><b>reporting</b></td><td>Summarize ingestion run</td><td><code>Lead</code> list</td><td>Markdown report</td><td><span class="status impl">Built</span></td></tr>
+        <tr><td><b>research agent</b></td><td>Build lead context via RAG</td><td>Lead + Pinecone</td><td>Research profile</td><td><span class="status plan">Planned</span></td></tr>
+        <tr><td><b>writer agent</b></td><td>Draft personalized message + sequence</td><td>Research profile</td><td>Draft message</td><td><span class="status plan">Planned</span></td></tr>
+        <tr><td><b>reviewer agent</b></td><td>Check quality/tone before send</td><td>Draft message</td><td>Approved / revised</td><td><span class="status plan">Planned</span></td></tr>
+        <tr><td><b>reply agent</b></td><td>Classify reply intent &amp; respond</td><td>Inbound reply</td><td>Intent + response</td><td><span class="status plan">Planned</span></td></tr>
+        <tr><td><b>scheduling agent</b></td><td>Book meeting on positive intent</td><td>Reply intent</td><td>Meeting record</td><td><span class="status plan">Planned</span></td></tr>
+        <tr><td><b>evaluator</b></td><td>Score message quality</td><td>Messages</td><td>RAGAS scores</td><td><span class="status plan">Planned</span></td></tr>
+        <tr><td><b>observability</b></td><td>Trace all agent/LLM activity</td><td>Spans</td><td>Traces, metrics</td><td><span class="status plan">Planned</span></td></tr>
       </tbody>
     </table>
 
@@ -429,7 +429,7 @@ flowchart TB
     <h2><span class="num">08</span>Data Flow Diagram — Level 2</h2>
     <p class="lead">Zooming into the two most complex processes.</p>
 
-    <div class="diagram-title">8.1 — Process 1+2: Ingest, Enrich &amp; Score (exploded · implemented Day 1)</div>
+    <div class="diagram-title">8.1 — Process 1+2: Ingest, Enrich &amp; Score (exploded · implemented)</div>
     <div class="mermaid">
 flowchart TB
     SRC(["Lead source"])
@@ -496,7 +496,7 @@ flowchart TB
     <h2><span class="num">09</span>Flow Diagrams (Sequence)</h2>
     <p class="lead">End-to-end timing across modules for the core journeys.</p>
 
-    <div class="diagram-title">9.1 — Ingestion &amp; scoring (Day 1, implemented)</div>
+    <div class="diagram-title">9.1 — Ingestion &amp; scoring (implemented)</div>
     <div class="mermaid">
 sequenceDiagram
     autonumber
@@ -693,16 +693,16 @@ flowchart LR
 
   <!-- 12. PLAN -->
   <section id="plan">
-    <h2><span class="num">12</span>7-Day Build Plan</h2>
-    <p class="lead">Each day ends with something runnable. Day 1 is implemented.</p>
+    <h2><span class="num">12</span>Roadmap</h2>
+    <p class="lead">Each milestone is independently runnable.</p>
     <div class="card">
-      <div class="step done"><div class="day">Day 1</div><div class="body"><b>Ingestion + enrichment + ICP scoring.</b> Dependency-free pipeline turning raw leads into enriched, scored leads with a report. <span class="status impl">Implemented</span></div></div>
-      <div class="step"><div class="day">Day 2</div><div class="body"><b>Databases.</b> PostgreSQL (leads, campaigns) + MongoDB (raw data, logs) persistence.</div></div>
-      <div class="step"><div class="day">Day 3</div><div class="body"><b>Vector memory + research agent.</b> Pinecone lead memory and a RAG research agent (Groq).</div></div>
-      <div class="step"><div class="day">Day 4</div><div class="body"><b>Outreach workflow.</b> LangGraph: research → write → review → send.</div></div>
-      <div class="step"><div class="day">Day 5</div><div class="body"><b>Replies + scheduling + async.</b> Reply agent, scheduling agent, Redis async workers.</div></div>
-      <div class="step"><div class="day">Day 6</div><div class="body"><b>Eval &amp; observability.</b> RAGAS message-quality evals + Langfuse/Phoenix tracing.</div></div>
-      <div class="step"><div class="day">Day 7</div><div class="body"><b>Ship.</b> Dockerize, deploy, dashboard, README polish, demo.</div></div>
+      <div class="step done"><div class="day">Built</div><div class="body"><b>Ingestion + enrichment + ICP scoring.</b> Dependency-free pipeline turning raw leads into enriched, scored leads with a report. <span class="status impl">Implemented</span></div></div>
+      <div class="step done"><div class="day">Built</div><div class="body"><b>Databases.</b> PostgreSQL (leads, campaigns) + MongoDB (raw data, logs) persistence. <span class="status impl">Implemented</span></div></div>
+      <div class="step"><div class="day">Planned</div><div class="body"><b>Vector memory + research agent.</b> Pinecone lead memory and a RAG research agent (Groq).</div></div>
+      <div class="step"><div class="day">Planned</div><div class="body"><b>Outreach workflow.</b> LangGraph: research → write → review → send.</div></div>
+      <div class="step"><div class="day">Planned</div><div class="body"><b>Replies + scheduling + async.</b> Reply agent, scheduling agent, Redis async workers.</div></div>
+      <div class="step"><div class="day">Planned</div><div class="body"><b>Eval &amp; observability.</b> RAGAS message-quality evals + Langfuse/Phoenix tracing.</div></div>
+      <div class="step"><div class="day">Planned</div><div class="body"><b>Ship.</b> Dockerize, deploy, dashboard, README polish, demo.</div></div>
     </div>
   </section>
 
@@ -726,8 +726,8 @@ flowchart LR
 
 <footer>
   <div class="wrap">
-    <p><b>AI SDR Agent</b> · Design document v1.0 · Day 1 (ingestion + ICP scoring) implemented; remaining days
-    add storage, RAG research, outreach orchestration, reply handling, evaluation, and deployment.</p>
+    <p><b>AI SDR Agent</b> · Design document v1.0 · Ingestion + ICP scoring and database
+    persistence are built; planned work adds RAG research, outreach orchestration, reply handling, evaluation, and deployment.</p>
   </div>
 </footer>
 
