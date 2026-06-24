@@ -49,8 +49,8 @@ Note: Pinecone and Groq are hosted services on free tiers; the models served are
 
 ## Build Plan
 
-- Day 1: Lead ingestion + enrichment + ICP scoring (this commit).
-- Day 2: Databases — PostgreSQL (leads, campaigns) + MongoDB (raw, logs).
+- Day 1: Lead ingestion + enrichment + ICP scoring.
+- Day 2: Databases — PostgreSQL (leads, campaigns) + MongoDB (raw, logs) (this commit).
 - Day 3: Pinecone vector memory + research agent (RAG, Groq).
 - Day 4: LangGraph outreach workflow (research -> write -> review -> send).
 - Day 5: Reply handling + scheduling agent + Redis async workers.
@@ -115,9 +115,54 @@ The file can be JSON or CSV with these columns:
 
 `full_name, title, company, location, email, linkedin_url, company_website, industry, source`
 
+## Day 2: Database Persistence
+
+Day 2 adds **polyglot persistence** — the right database for each kind of data:
+
+- **PostgreSQL** stores structured, queryable records (`leads`, plus a `campaigns`
+  scaffold). The `leads` table mirrors the `Lead` dataclass; `icp_reasons` is a
+  `JSONB` column. Writes are **upserts** (`ON CONFLICT (lead_id) DO UPDATE`), so
+  re-running the pipeline never creates duplicates.
+- **MongoDB** stores loosely-shaped and append-only data: `raw_leads` (the lead
+  exactly as ingested, upserted on a deterministic `_id`) and `run_logs` (one
+  document per pipeline run).
+
+### Setup
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+cp .env.example .env   # then fill in MONGODB_URI / POSTGRES_URL
+createdb ai_sdr        # one-time, local PostgreSQL
+```
+
+Configure `.env`:
+
+- `POSTGRES_URL` — e.g. `postgresql://localhost:5432/ai_sdr`
+- `MONGODB_URI` — local (`mongodb://localhost:27017/ai_sdr`) or Atlas
+  (`mongodb+srv://<user>:<password>@<cluster>/ai_sdr?...`)
+
+### Run With Persistence
+
+```bash
+PYTHONPATH=src .venv/bin/python -m ai_sdr.pipeline --source sample --persist
+```
+
+Without `--persist`, the pipeline behaves exactly as on Day 1 (JSONL + report
+only). With `--persist`, it additionally upserts leads into PostgreSQL and stores
+raw leads + a run log in MongoDB. The database drivers are imported lazily, so a
+non-persisting run requires no database at all.
+
+### Code Layout (Day 2)
+
+```text
+src/ai_sdr/db/
+  postgres.py   # connect, init_schema, upsert_leads, count_leads
+  mongo.py      # connect, get_db, ping, store_raw_leads, log_run
+```
+
 ## Next Steps
 
-- Add database persistence (PostgreSQL + MongoDB).
 - Add Pinecone-backed lead memory.
 - Replace rule-based ICP scoring with an LLM scoring agent.
 - Build the LangGraph outreach workflow.

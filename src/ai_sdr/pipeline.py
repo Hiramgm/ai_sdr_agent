@@ -31,7 +31,51 @@ def parse_args() -> argparse.Namespace:
         default=60,
         help="Minimum ICP score to count a lead as qualified.",
     )
+    parser.add_argument(
+        "--persist",
+        action="store_true",
+        help="Also persist results to PostgreSQL (leads) and MongoDB (raw + run log).",
+    )
     return parser.parse_args()
+
+
+def persist_to_databases(
+    raw_leads: list,
+    leads: list,
+    source: str,
+    threshold: int,
+    qualified: int,
+) -> None:
+    """Write structured leads to Postgres and raw leads + a run log to Mongo.
+
+    Drivers are imported lazily so the default (no --persist) run needs no DB.
+    """
+    from .db import mongo
+    from .db import postgres as pg
+
+    conn = pg.connect()
+    pg.init_schema(conn)
+    written = pg.upsert_leads(conn, leads)
+    pg_total = pg.count_leads(conn)
+    conn.close()
+    print(f"Postgres: upserted {written} leads (total now {pg_total})")
+
+    client = mongo.connect()
+    try:
+        db = mongo.get_db(client)
+        raw_written = mongo.store_raw_leads(db, raw_leads)
+        run_id = mongo.log_run(
+            db,
+            {
+                "source": source,
+                "threshold": threshold,
+                "total_leads": len(leads),
+                "qualified_leads": qualified,
+            },
+        )
+        print(f"MongoDB: stored {raw_written} raw leads; run_logs id {run_id}")
+    finally:
+        client.close()
 
 
 def main() -> None:
@@ -55,6 +99,9 @@ def main() -> None:
     print(f"Wrote raw leads: {raw_path}")
     print(f"Wrote enriched leads: {leads_path}")
     print(f"Wrote report: {report_path}")
+
+    if args.persist:
+        persist_to_databases(raw_leads, leads, args.source, args.threshold, qualified)
 
 
 if __name__ == "__main__":

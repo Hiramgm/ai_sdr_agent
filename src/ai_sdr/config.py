@@ -4,11 +4,17 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 ROOT_DIR = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT_DIR / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 REPORTS_DIR = ROOT_DIR / "reports"
+
+# Load variables from a local .env file (if present) into the environment so
+# that the settings below can read them. Secrets stay in .env, never in code.
+load_dotenv(ROOT_DIR / ".env")
 
 
 @dataclass(frozen=True)
