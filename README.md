@@ -161,8 +161,105 @@ src/ai_sdr/db/
   mongo.py      # connect, get_db, ping, store_raw_leads, log_run
 ```
 
+## Pinecone Lead Memory
+
+This is the first step toward the **research agent / RAG** milestone.
+
+RAG has two halves:
+
+1. **Indexing** — convert useful lead data into searchable memory.
+2. **Retrieval + generation** — fetch relevant memory and ask the LLM to create a
+   research profile.
+
+This milestone is being built step by step. The project now supports indexing
+lead memory and retrieving relevant records from Pinecone.
+
+### Pinecone Setup
+
+Create a Pinecone index that uses integrated embeddings. Configure its field map
+so Pinecone embeds the text field named by `PINECONE_TEXT_FIELD`.
+
+Configure `.env`:
+
+- `PINECONE_API_KEY` — your Pinecone API key.
+- `PINECONE_INDEX` — the index name, defaults to `ai-sdr-leads`.
+- `PINECONE_NAMESPACE` — namespace for lead records, defaults to `leads`.
+- `PINECONE_TEXT_FIELD` — text field Pinecone embeds, defaults to `text`.
+- `GROQ_API_KEY` — required for Groq-powered research, writing, and review.
+- `GROQ_MODEL` — defaults to `llama-3.3-70b-versatile`.
+
+### Index Sample Leads
+
+```bash
+PYTHONPATH=src .venv/bin/python -m ai_sdr.pipeline --source sample --index-memory
+```
+
+Normal ingestion still works without Pinecone. The Pinecone SDK is imported lazily,
+only when `--index-memory` is used.
+
+### Search Lead Memory
+
+Retrieval is the second half of RAG. It asks Pinecone: "which stored lead records
+are closest to this question?"
+
+```bash
+PYTHONPATH=src .venv/bin/python -m ai_sdr.memory.search "AI founder in London" --top-k 3
+```
+
+To inspect the full stored context that will later be passed to the research
+agent:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m ai_sdr.memory.search "AI founder in London" --top-k 1 --show-text
+```
+
+Use metadata filters when a condition must be exact. In this example, Pinecone
+searches semantically for "AI founder" but only inside leads whose normalized
+region is `germany`:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m ai_sdr.memory.search "AI founder" --region germany --top-k 1 --show-text
+```
+
+Available filters: `--region`, `--industry`, `--seniority`, and
+`--min-icp-score`.
+
+### Generate A Research Profile
+
+The research profile is the first agent-facing artifact. It takes the best
+retrieved lead-memory match and asks Groq to produce structured research context
+for outreach writing.
+
+```bash
+PYTHONPATH=src .venv/bin/python -m ai_sdr.research.profile "AI founder" --region germany --save
+```
+
+This writes a Markdown profile under `reports/research_profiles/` when `--save`
+is used. The profile includes a lead summary, ICP fit rationale, personalization
+angles, possible pain points, an outreach hook, missing research, and source
+context.
+
+## Outreach Orchestration
+
+This is the first step toward the **LangGraph outreach workflow** milestone. It
+uses Groq for the writing and review decisions while keeping orchestration in
+plain Python for now.
+
+The workflow runs:
+
+1. **Research** — retrieve lead memory and ask Groq to build a `ResearchProfile`.
+2. **Write** — ask Groq to generate a first-touch `OutreachMessageDraft`.
+3. **Review** — ask Groq to score, approve, or request revisions.
+
+```bash
+PYTHONPATH=src .venv/bin/python -m ai_sdr.outreach.workflow "AI founder" --region germany --save
+```
+
+This writes a Markdown run artifact under `reports/outreach_runs/` when `--save`
+is used. The artifact contains the research profile, message draft, review
+checks, and reviewer feedback.
+
 ## Next Steps
 
-- Add Pinecone-backed lead memory.
 - Replace rule-based ICP scoring with an LLM scoring agent.
-- Build the LangGraph outreach workflow.
+- Wrap the Groq-powered `research -> write -> review` contracts in LangGraph.

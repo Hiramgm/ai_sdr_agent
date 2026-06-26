@@ -36,6 +36,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Also persist results to PostgreSQL (leads) and MongoDB (raw + run log).",
     )
+    parser.add_argument(
+        "--index-memory",
+        action="store_true",
+        help="Also upsert enriched leads into Pinecone vector memory.",
+    )
     return parser.parse_args()
 
 
@@ -78,6 +83,15 @@ def persist_to_databases(
         client.close()
 
 
+def index_lead_memory(leads: list) -> None:
+    """Write enriched leads to Pinecone only when explicitly requested."""
+    from .memory.lead_memory import PineconeLeadMemory
+
+    memory = PineconeLeadMemory()
+    written = memory.upsert_leads(leads)
+    print(f"Pinecone: upserted {written} lead memory records")
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     args = parse_args()
@@ -102,6 +116,9 @@ def main() -> None:
 
     if args.persist:
         persist_to_databases(raw_leads, leads, args.source, args.threshold, qualified)
+
+    if args.index_memory:
+        index_lead_memory(leads)
 
 
 if __name__ == "__main__":

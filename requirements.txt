@@ -6,13 +6,18 @@ pymongo>=4.6
 dnspython>=2.6
 python-dotenv>=1.0
 
+# Vector memory (Pinecone integrated embeddings).
+pinecone
+typing_extensions
+
+# LLM decisions (outreach writing + review via Groq).
+groq
+
 # Planned additions, for example:
 # fastapi
 # uvicorn
 # langgraph
 # langchain-core
-# groq
-# pinecone-client
 # redis
 # rq
 # playwright

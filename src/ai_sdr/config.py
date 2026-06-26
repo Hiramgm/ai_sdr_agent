@@ -49,8 +49,11 @@ class Settings:
     """Runtime settings. Secrets are read from the environment, never hardcoded."""
 
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
+    groq_model: str = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
     pinecone_api_key: str = os.getenv("PINECONE_API_KEY", "")
     pinecone_index: str = os.getenv("PINECONE_INDEX", "ai-sdr-leads")
+    pinecone_namespace: str = os.getenv("PINECONE_NAMESPACE", "leads")
+    pinecone_text_field: str = os.getenv("PINECONE_TEXT_FIELD", "text")
     mongodb_uri: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
     postgres_url: str = os.getenv("POSTGRES_URL", "postgresql://localhost:5432/ai_sdr")
     redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")

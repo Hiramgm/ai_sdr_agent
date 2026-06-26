@@ -60,7 +60,7 @@ flowchart TB
     api --> dashboard[Dashboard / Frontend]
 ```
 
-## Ingestion Build (Implemented)
+## Current Build (Implemented)
 
 ```mermaid
 flowchart LR
@@ -71,6 +71,13 @@ flowchart LR
     store --> rawfile[data/raw/leads_raw.jsonl]
     store --> procfile[data/processed/leads.jsonl]
     score --> report[reports/ingestion_report.md]
+    score -. --index-memory .-> pinecone[(Pinecone\nlead memory)]
+    query[Search query] -. memory.search .-> pinecone
+    pinecone -. matches .-> results[Relevant lead records]
+    results -. Groq research .-> profile[Research profile]
+    profile -. Groq writer .-> draft[Message draft]
+    draft -. Groq reviewer .-> review[Review result]
+    review -. save .-> run[Outreach run artifact]
 ```
 
 ## Data Flow (Ingestion)
@@ -98,8 +105,20 @@ sequenceDiagram
 | --- | --- |
 | Built | Ingestion + enrichment + ICP scoring |
 | Built | PostgreSQL + MongoDB storage |
-| Planned | Pinecone vector memory + research agent (RAG) |
-| Planned | LangGraph outreach workflow |
+| In progress | Pinecone vector memory + research agent (RAG) |
+| In progress | LangGraph outreach workflow |
 | Planned | Reply + scheduling agents + Redis async workers |
 | Planned | RAGAS evaluation + Langfuse/Phoenix observability |
 | Planned | Docker + cloud deployment + dashboard |
+
+## TODOs / Deferred Polish
+
+- Add LLM-based query parsing for lead-memory search after the full outreach
+  pipeline is built. The current search command supports explicit metadata
+  filters (`--region`, `--industry`, `--seniority`, `--min-icp-score`) for
+  debuggability. Later, Groq can extract those filters from natural-language
+  queries such as "AI founder in Germany" and pass them into the same retrieval
+  layer.
+- Wrap the Groq-powered `research -> write -> review` workflow in LangGraph
+  after the node contracts are stable. The current orchestrator is intentionally
+  plain Python so each step can be tested and understood independently.
