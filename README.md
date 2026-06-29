@@ -51,9 +51,12 @@ Note: Pinecone and Groq are hosted services on free tiers; the models served are
 
 - [x] Lead ingestion + enrichment + ICP scoring.
 - [x] Databases — PostgreSQL (leads, campaigns) + MongoDB (raw, logs).
-- [ ] Pinecone vector memory + research agent (RAG, Groq).
-- [ ] LangGraph outreach workflow (research -> write -> review -> send).
-- [ ] Reply handling + scheduling agent + Redis async workers.
+- [x] Pinecone vector memory + research agent (RAG, Groq).
+- [x] LangGraph outreach workflow (research -> write -> review).
+- [x] Reply classification agent.
+- [x] Scheduling agent (meeting proposals from interested replies).
+- [x] FastAPI demo API + web UI console.
+- [x] Redis + RQ async workers (background outreach jobs).
 - [ ] RAGAS message-quality evals + Langfuse/Phoenix observability.
 - [ ] Dockerize, deploy, and dashboard.
 
@@ -96,7 +99,10 @@ ai_sdr_agent/
 
 ```bash
 cd ai_sdr_agent
-PYTHONPATH=src python3 -m ai_sdr.pipeline --source sample
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+python -m ai_sdr.pipeline --source sample
 ```
 
 This creates:
@@ -108,7 +114,7 @@ This creates:
 ### Run With Your Own File
 
 ```bash
-PYTHONPATH=src python3 -m ai_sdr.pipeline --source file --input leads.csv
+python -m ai_sdr.pipeline --source file --input leads.csv
 ```
 
 The file can be JSON or CSV with these columns:
@@ -131,7 +137,8 @@ This adds **polyglot persistence** — the right database for each kind of data:
 
 ```bash
 python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
+source .venv/bin/activate
+python -m pip install -e .
 cp .env.example .env   # then fill in MONGODB_URI / POSTGRES_URL
 createdb ai_sdr        # one-time, local PostgreSQL
 ```
@@ -145,7 +152,7 @@ Configure `.env`:
 ### Run With Persistence
 
 ```bash
-PYTHONPATH=src .venv/bin/python -m ai_sdr.pipeline --source sample --persist
+python -m ai_sdr.pipeline --source sample --persist
 ```
 
 Without `--persist`, the pipeline behaves as the ingestion-only path (JSONL +
@@ -191,7 +198,7 @@ Configure `.env`:
 ### Index Sample Leads
 
 ```bash
-PYTHONPATH=src .venv/bin/python -m ai_sdr.pipeline --source sample --index-memory
+python -m ai_sdr.pipeline --source sample --index-memory
 ```
 
 Normal ingestion still works without Pinecone. The Pinecone SDK is imported lazily,
@@ -203,14 +210,14 @@ Retrieval is the second half of RAG. It asks Pinecone: "which stored lead record
 are closest to this question?"
 
 ```bash
-PYTHONPATH=src .venv/bin/python -m ai_sdr.memory.search "AI founder in London" --top-k 3
+python -m ai_sdr.memory.search "AI founder in London" --top-k 3
 ```
 
 To inspect the full stored context that will later be passed to the research
 agent:
 
 ```bash
-PYTHONPATH=src .venv/bin/python -m ai_sdr.memory.search "AI founder in London" --top-k 1 --show-text
+python -m ai_sdr.memory.search "AI founder in London" --top-k 1 --show-text
 ```
 
 Use metadata filters when a condition must be exact. In this example, Pinecone
@@ -218,7 +225,7 @@ searches semantically for "AI founder" but only inside leads whose normalized
 region is `germany`:
 
 ```bash
-PYTHONPATH=src .venv/bin/python -m ai_sdr.memory.search "AI founder" --region germany --top-k 1 --show-text
+python -m ai_sdr.memory.search "AI founder" --region germany --top-k 1 --show-text
 ```
 
 Available filters: `--region`, `--industry`, `--seniority`, and
@@ -231,7 +238,7 @@ retrieved lead-memory match and asks Groq to produce structured research context
 for outreach writing.
 
 ```bash
-PYTHONPATH=src .venv/bin/python -m ai_sdr.research.profile "AI founder" --region germany --save
+python -m ai_sdr.research.profile "AI founder" --region germany --save
 ```
 
 This writes a Markdown profile under `reports/research_profiles/` when `--save`
@@ -241,9 +248,8 @@ context.
 
 ## Outreach Orchestration
 
-This is the first step toward the **LangGraph outreach workflow** milestone. It
-uses Groq for the writing and review decisions while keeping orchestration in
-plain Python for now.
+This is the first LangGraph orchestration milestone. It uses Groq for research,
+writing, and review decisions, with LangGraph coordinating the node flow.
 
 The workflow runs:
 
@@ -252,14 +258,96 @@ The workflow runs:
 3. **Review** — ask Groq to score, approve, or request revisions.
 
 ```bash
-PYTHONPATH=src .venv/bin/python -m ai_sdr.outreach.workflow "AI founder" --region germany --save
+python -m ai_sdr.outreach.workflow "AI founder" --region germany --save
 ```
 
 This writes a Markdown run artifact under `reports/outreach_runs/` when `--save`
 is used. The artifact contains the research profile, message draft, review
 checks, and reviewer feedback.
 
+## Reply Classification
+
+The reply classifier is the first reply-handling agent. It reads an inbound
+prospect reply and returns structured intent, sentiment, urgency, confidence,
+summary, and the recommended next action.
+
+```bash
+python -m ai_sdr.outreach.reply "Sounds interesting. Can you send more details?" --lead-id laura-schmidt --save
+```
+
+Supported intents include `interested`, `objection`, `not_now`, `unsubscribe`,
+`out_of_office`, `referral`, `wrong_person`, `neutral`, and `unknown`.
+Classifications saved with `--save` are written under
+`reports/reply_classifications/`.
+
+## Scheduling Agent
+
+When a reply is classified as `interested` (or a `referral`), the scheduling
+agent proposes a meeting. Candidate time slots are computed in Python on real
+upcoming business days (no hallucinated dates), and Groq chooses the meeting
+type, duration, agenda, and writes a short reply email offering those slots.
+
+```bash
+python -m ai_sdr.outreach.scheduling "Yes, I'd love a quick call next week" --lead-id laura-schmidt --lead-name Laura --save
+```
+
+For non-schedulable intents (for example `not_now` or `unsubscribe`), the agent
+skips scheduling and explains why. Proposals saved with `--save` are written
+under `reports/meeting_proposals/`.
+
+## Demo UI
+
+A FastAPI backend serves a single-page console for live demos and interaction.
+It exposes the outreach workflow, reply triage, and scheduling agents over HTTP
+and renders the results in the browser.
+
+```bash
+python -m uvicorn ai_sdr.api:app --reload
+```
+
+Then open http://127.0.0.1:8000. The header shows whether `GROQ_API_KEY` and
+`PINECONE_API_KEY` are configured. Endpoints:
+
+- `GET /api/health` — environment/config status.
+- `POST /api/outreach` — research -> write -> review for a lead query (synchronous).
+- `POST /api/reply` — classify an inbound reply.
+- `POST /api/schedule` — triage a reply and, if interested, propose a meeting.
+- `POST /api/jobs/outreach` — enqueue the outreach workflow as a background job.
+- `GET /api/jobs/{job_id}` — poll a background job's status and result.
+
+## Async Workers (Redis + RQ)
+
+The outreach workflow can run as a background job so the API stays responsive
+during long LLM calls. Jobs are queued in Redis and processed by an RQ worker.
+Redis and RQ are imported lazily, so the CLI and synchronous endpoints keep
+working with no queue running; async endpoints return a clean `503` until a
+Redis server is reachable.
+
+Start Redis (for example via Docker), then run a worker:
+
+```bash
+docker run -p 6379:6379 redis:7        # or: brew services start redis
+python -m ai_sdr.jobs.worker --simple  # --simple avoids fork issues on macOS
+```
+
+Enqueue a job and poll it from the API:
+
+```bash
+curl -s -X POST http://127.0.0.1:8000/api/jobs/outreach \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "AI founder", "region": "germany"}'
+# -> {"job_id": "...", "status": "queued"}
+
+curl -s http://127.0.0.1:8000/api/jobs/<job_id>
+# -> {"job_id": "...", "status": "finished", "result": {...}}
+```
+
+In the demo UI, tick **Run as background job (Redis worker)** on the Outreach
+tab to enqueue the job and watch it move from `queued` to `started` to
+`finished` live. Configure the connection with `REDIS_URL` (defaults to
+`redis://localhost:6379/0`).
+
 ## Next Steps
 
-- Replace rule-based ICP scoring with an LLM scoring agent.
-- Wrap the Groq-powered `research -> write -> review` contracts in LangGraph.
+- Add RAGAS message-quality evals and Langfuse/Phoenix observability.
+- Dockerize the API, worker, and dependencies for one-command deployment.

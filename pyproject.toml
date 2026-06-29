@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-sdr-agent"
+version = "0.1.0"
+description = "Autonomous AI SDR agent with lead ingestion, memory, research, and outreach orchestration."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "psycopg[binary]>=3.1",
+    "pymongo>=4.6",
+    "dnspython>=2.6",
+    "python-dotenv>=1.0",
+    "pinecone",
+    "typing_extensions",
+    "groq",
+    "langgraph",
+    "langchain-core",
+    "fastapi",
+    "uvicorn[standard]",
+    "redis",
+    "rq",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ai_sdr = ["web/*.html"]

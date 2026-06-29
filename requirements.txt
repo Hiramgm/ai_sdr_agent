@@ -13,12 +13,19 @@ typing_extensions
 # LLM decisions (outreach writing + review via Groq).
 groq
 
+# Agent orchestration.
+langgraph
+langchain-core
+
+# Demo API + UI.
+fastapi
+uvicorn[standard]
+
+# Async job queue + workers.
+redis
+rq
+
 # Planned additions, for example:
-# fastapi
-# uvicorn
-# langgraph
-# langchain-core
-# redis
 # rq
 # playwright
 # beautifulsoup4

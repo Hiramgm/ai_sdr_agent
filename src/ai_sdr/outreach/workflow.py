@@ -7,9 +7,8 @@ from typing import Any
 
 from ai_sdr.config import REPORTS_DIR
 from ai_sdr.memory.search import build_metadata_filter
-from ai_sdr.outreach.reviewer import review_draft
-from ai_sdr.outreach.writer import write_first_touch
-from ai_sdr.research.profile import generate_research_profile, format_profile
+from ai_sdr.outreach.graph import run_langgraph_outreach_workflow
+from ai_sdr.research.profile import format_profile
 from ai_sdr.schemas import OutreachWorkflowRun
 
 
@@ -50,21 +49,10 @@ def run_outreach_workflow(
     top_k: int = 3,
     metadata_filter: dict[str, Any] | None = None,
 ) -> OutreachWorkflowRun | None:
-    profile = generate_research_profile(
+    return run_langgraph_outreach_workflow(
         query=query,
         top_k=top_k,
         metadata_filter=metadata_filter,
-    )
-    if profile is None:
-        return None
-
-    draft = write_first_touch(profile)
-    review = review_draft(draft, profile)
-    return OutreachWorkflowRun(
-        query=query,
-        profile=profile,
-        draft=draft,
-        review=review,
     )
 
 

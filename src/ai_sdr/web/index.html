@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI SDR Agent — Demo Console</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #141a2e;
+      --panel-2: #1b2238;
+      --border: #273150;
+      --text: #e6e9f2;
+      --muted: #97a0bd;
+      --accent: #6c8cff;
+      --accent-2: #38d39f;
+      --danger: #ff6b6b;
+      --warn: #ffcf6b;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 80% -10%, #1a2546 0%, var(--bg) 55%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      padding: 28px 32px 8px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand h1 { font-size: 22px; margin: 0; letter-spacing: 0.2px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent-2); box-shadow: 0 0 12px var(--accent-2); }
+    .sub { color: var(--muted); margin: 6px 0 0; font-size: 14px; }
+    .status { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+    .chip {
+      font-size: 12px; padding: 5px 10px; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--panel); color: var(--muted);
+    }
+    .chip.ok { color: var(--accent-2); border-color: #2b5a48; }
+    .chip.off { color: var(--danger); border-color: #5a2b2b; }
+    main { max-width: 1100px; margin: 0 auto; padding: 18px 32px 60px; }
+    .tabs { display: flex; gap: 8px; margin: 18px 0; flex-wrap: wrap; }
+    .tab {
+      padding: 10px 16px; border-radius: 10px; cursor: pointer; font-size: 14px;
+      border: 1px solid var(--border); background: var(--panel); color: var(--muted);
+      transition: all 0.15s ease;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: #fff; background: linear-gradient(180deg, #2a3c7a, #223064); border-color: var(--accent); }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    @media (max-width: 880px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+    }
+    .card h2 { margin: 0 0 4px; font-size: 16px; }
+    .card p.hint { margin: 0 0 16px; color: var(--muted); font-size: 13px; }
+    label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
+    label.check { display: flex; align-items: center; gap: 8px; margin-top: 16px; }
+    label.check input { width: auto; }
+    .jobstatus { font-size: 13px; color: var(--muted); margin: 8px 0; }
+    .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; border: 1px solid var(--border); background: var(--panel-2); margin-left: 6px; }
+    input, textarea, select {
+      width: 100%; padding: 11px 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--panel-2); color: var(--text);
+      font-size: 14px; font-family: inherit;
+    }
+    textarea { min-height: 120px; resize: vertical; }
+    .row { display: flex; gap: 12px; }
+    .row > div { flex: 1; }
+    button.run {
+      margin-top: 18px; width: 100%; padding: 12px; border: none; cursor: pointer;
+      border-radius: 10px; font-size: 15px; font-weight: 600; color: #fff;
+      background: linear-gradient(180deg, var(--accent), #4f6fe0);
+    }
+    button.run:disabled { opacity: 0.6; cursor: not-allowed; }
+    .out { min-height: 200px; }
+    .placeholder { color: var(--muted); font-size: 14px; }
+    .err { color: var(--danger); font-size: 14px; white-space: pre-wrap; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .badge.green { background: #173f31; color: var(--accent-2); }
+    .badge.red { background: #3f1717; color: var(--danger); }
+    .badge.amber { background: #3f3417; color: var(--warn); }
+    .badge.blue { background: #1b2a5a; color: var(--accent); }
+    .kv { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+    .kv span { font-size: 12px; padding: 5px 10px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--border); }
+    .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin: 16px 0 6px; }
+    ul.clean { margin: 6px 0; padding-left: 18px; }
+    ul.clean li { margin: 4px 0; font-size: 14px; }
+    .msgbox { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; white-space: pre-wrap; font-size: 14px; line-height: 1.5; }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .meter { height: 8px; background: var(--panel-2); border-radius: 999px; overflow: hidden; margin-top: 6px; }
+    .meter > div { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="dot"></div>
+      <h1>AI SDR Agent</h1>
+    </div>
+    <p class="sub">Demo console for the multi-agent outbound workflow: research, write, review, reply triage, and scheduling.</p>
+    <div class="status" id="status"><span class="chip">checking environment…</span></div>
+  </header>
+
+  <main>
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-tab="outreach">1 · Outreach Workflow</div>
+      <div class="tab" data-tab="reply">2 · Reply Triage</div>
+      <div class="tab" data-tab="schedule">3 · Scheduling</div>
+    </div>
+
+    <!-- Outreach -->
+    <section class="grid" data-panel="outreach">
+      <div class="card">
+        <h2>Research → Write → Review</h2>
+        <p class="hint">Retrieves a lead from Pinecone memory, then drafts and reviews a first-touch email with Groq.</p>
+        <label>Lead query</label>
+        <input id="o-query" placeholder="AI founder in Germany" value="AI founder" />
+        <div class="row">
+          <div>
+            <label>Region</label>
+            <input id="o-region" placeholder="germany" />
+          </div>
+          <div>
+            <label>Top K</label>
+            <input id="o-topk" type="number" value="3" min="1" max="10" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Industry</label>
+            <input id="o-industry" placeholder="software" />
+          </div>
+          <div>
+            <label>Min ICP score</label>
+            <input id="o-icp" type="number" placeholder="70" />
+          </div>
+        </div>
+        <label class="check"><input type="checkbox" id="o-async" /> Run as background job (Redis worker)</label>
+        <button class="run" onclick="runOutreach()">Run workflow</button>
+      </div>
+      <div class="card out" id="o-out"><p class="placeholder">Results will appear here.</p></div>
+    </section>
+
+    <!-- Reply -->
+    <section class="grid" data-panel="reply" style="display:none">
+      <div class="card">
+        <h2>Reply Triage</h2>
+        <p class="hint">Classifies an inbound reply into intent, sentiment, urgency, and a recommended next action.</p>
+        <label>Lead ID (optional)</label>
+        <input id="r-lead" placeholder="laura-schmidt" />
+        <label>Inbound reply</label>
+        <textarea id="r-text">Thanks for reaching out. This is interesting — could you share a bit more about how it would work for our team?</textarea>
+        <button class="run" onclick="runReply()">Classify reply</button>
+      </div>
+      <div class="card out" id="r-out"><p class="placeholder">Results will appear here.</p></div>
+    </section>
+
+    <!-- Schedule -->
+    <section class="grid" data-panel="schedule" style="display:none">
+      <div class="card">
+        <h2>Scheduling Agent</h2>
+        <p class="hint">Triages the reply, and if the prospect is interested, proposes a meeting with concrete slots and a reply email.</p>
+        <div class="row">
+          <div>
+            <label>Lead ID</label>
+            <input id="s-lead" placeholder="laura-schmidt" value="laura-schmidt" />
+          </div>
+          <div>
+            <label>Lead name</label>
+            <input id="s-name" placeholder="Laura" />
+          </div>
+        </div>
+        <label>Inbound reply</label>
+        <textarea id="s-text">Yes, I'd love to learn more. Can we set up a quick call next week?</textarea>
+        <button class="run" onclick="runSchedule()">Propose meeting</button>
+      </div>
+      <div class="card out" id="s-out"><p class="placeholder">Results will appear here.</p></div>
+    </section>
+  </main>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(t => t.addEventListener('click', () => {
+      tabs.forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      const name = t.dataset.tab;
+      document.querySelectorAll('[data-panel]').forEach(p => {
+        p.style.display = p.dataset.panel === name ? 'grid' : 'none';
+      });
+    }));
+
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    }
+    function list(items) {
+      if (!items || !items.length) return '';
+      return '<ul class="clean">' + items.map(i => `<li>${esc(i)}</li>`).join('') + '</ul>';
+    }
+    function loading(el) { el.innerHTML = '<p class="placeholder"><span class="spinner"></span> &nbsp;Calling agent…</p>'; }
+    function showError(el, msg) { el.innerHTML = `<p class="err">⚠ ${esc(msg)}</p>`; }
+
+    async function call(path, body) {
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || ('Request failed: ' + res.status));
+      return data;
+    }
+
+    function intentBadge(intent) {
+      const map = { interested: 'green', referral: 'green', objection: 'amber', not_now: 'amber', neutral: 'blue', out_of_office: 'blue', unsubscribe: 'red', wrong_person: 'red', unknown: 'blue' };
+      return `<span class="badge ${map[intent] || 'blue'}">${esc(intent)}</span>`;
+    }
+
+    function outreachBody() {
+      const icp = document.getElementById('o-icp').value;
+      return {
+        query: document.getElementById('o-query').value,
+        top_k: parseInt(document.getElementById('o-topk').value || '3', 10),
+        region: document.getElementById('o-region').value || null,
+        industry: document.getElementById('o-industry').value || null,
+        min_icp_score: icp ? parseInt(icp, 10) : null,
+      };
+    }
+
+    function renderOutreach(data) {
+      const p = data.profile, d = data.draft, r = data.review;
+      return `
+        <h2>${esc(p.full_name)} · ${esc(p.company)}</h2>
+        <div class="kv">
+          <span>ICP: ${esc(p.icp_score)}</span>
+          <span>Match: ${Number(p.match_score).toFixed(3)}</span>
+          <span>Review: ${r.approved ? '<b style="color:var(--accent-2)">approved</b>' : '<b style="color:var(--warn)">needs revision</b>'} (${esc(r.score)})</span>
+        </div>
+        <div class="section-title">Draft email</div>
+        <div class="msgbox"><b>Subject:</b> ${esc(d.subject)}\n\n${esc(d.body)}</div>
+        <div class="section-title">Personalization</div>
+        ${list(d.personalization_used)}
+        <div class="section-title">Reviewer feedback</div>
+        ${list(r.feedback)}
+      `;
+    }
+
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+    async function runOutreach() {
+      const el = document.getElementById('o-out');
+      const isAsync = document.getElementById('o-async').checked;
+      loading(el);
+      try {
+        if (!isAsync) {
+          const data = await call('/api/outreach', outreachBody());
+          el.innerHTML = renderOutreach(data);
+          return;
+        }
+        // Async: enqueue a background job, then poll for completion.
+        const job = await call('/api/jobs/outreach', outreachBody());
+        let state = job;
+        for (let i = 0; i < 60 && ['queued', 'started', 'deferred', 'scheduled'].includes(state.status); i++) {
+          el.innerHTML = `<p class="jobstatus"><span class="spinner"></span> &nbsp;Background job <code>${esc(job.job_id)}</code><span class="pill">${esc(state.status)}</span></p>`;
+          await sleep(1000);
+          state = await (await fetch('/api/jobs/' + encodeURIComponent(job.job_id))).json();
+        }
+        if (state.status === 'finished') {
+          const result = state.result || {};
+          if (result.found === false) { showError(el, result.message || 'No matching lead memory records found.'); return; }
+          el.innerHTML = `<p class="jobstatus">Job <code>${esc(job.job_id)}</code><span class="pill">finished</span></p>` + renderOutreach(result.run);
+        } else if (state.status === 'failed') {
+          showError(el, state.error || 'Background job failed.');
+        } else {
+          showError(el, 'Job did not finish in time. Is a worker running? (python -m ai_sdr.jobs.worker --simple)');
+        }
+      } catch (e) { showError(el, e.message); }
+    }
+
+    async function runReply() {
+      const el = document.getElementById('r-out');
+      loading(el);
+      try {
+        const c = await call('/api/reply', {
+          reply_text: document.getElementById('r-text').value,
+          lead_id: document.getElementById('r-lead').value || null,
+        });
+        el.innerHTML = renderClassification(c);
+      } catch (e) { showError(el, e.message); }
+    }
+
+    function renderClassification(c) {
+      return `
+        <h2>Triage result ${intentBadge(c.intent)}</h2>
+        <div class="kv">
+          <span>Sentiment: ${esc(c.sentiment)}</span>
+          <span>Urgency: ${esc(c.urgency)}</span>
+          <span>${c.needs_human_review ? '<b style="color:var(--warn)">needs human review</b>' : 'auto-handled'}</span>
+        </div>
+        <div class="section-title">Confidence</div>
+        <div class="meter"><div style="width:${Math.round((c.confidence || 0) * 100)}%"></div></div>
+        <div class="section-title">Summary</div>
+        <p>${esc(c.summary)}</p>
+        <div class="section-title">Recommended action</div>
+        <p>${esc(c.recommended_action)}</p>
+        <div class="section-title">Reasons</div>
+        ${list(c.reasons)}
+      `;
+    }
+
+    async function runSchedule() {
+      const el = document.getElementById('s-out');
+      loading(el);
+      try {
+        const data = await call('/api/schedule', {
+          reply_text: document.getElementById('s-text').value,
+          lead_id: document.getElementById('s-lead').value || 'unknown',
+          lead_name: document.getElementById('s-name').value || null,
+        });
+        const c = data.classification, m = data.proposal;
+        let html = renderClassification(c);
+        html += '<hr style="border-color:var(--border);margin:18px 0" />';
+        if (m.should_schedule) {
+          html += `
+            <h2>Meeting proposal <span class="badge green">${esc(m.meeting_type)}</span></h2>
+            <div class="kv"><span>Duration: ${esc(m.duration_minutes)} min</span></div>
+            <div class="section-title">Proposed slots</div>
+            ${list(m.proposed_slots)}
+            <div class="section-title">Agenda</div>
+            ${list(m.agenda)}
+            <div class="section-title">Reply message</div>
+            <div class="msgbox">${esc(m.reply_message)}</div>
+          `;
+        } else {
+          html += `<div class="section-title">Scheduling skipped</div>${list(m.reasons)}`;
+        }
+        el.innerHTML = html;
+      } catch (e) { showError(el, e.message); }
+    }
+
+    (async function initStatus() {
+      const el = document.getElementById('status');
+      try {
+        const res = await fetch('/api/health');
+        const h = await res.json();
+        el.innerHTML = `
+          <span class="chip ${h.groq_configured ? 'ok' : 'off'}">Groq ${h.groq_configured ? 'connected' : 'missing key'}</span>
+          <span class="chip ${h.pinecone_configured ? 'ok' : 'off'}">Pinecone ${h.pinecone_configured ? 'connected' : 'missing key'}</span>
+          <span class="chip">model: ${esc(h.model)}</span>
+          <span class="chip">redis: ${esc(h.redis_url)}</span>
+        `;
+      } catch (e) {
+        el.innerHTML = '<span class="chip off">backend unreachable</span>';
+      }
+    })();
+  </script>
+</body>
+</html>

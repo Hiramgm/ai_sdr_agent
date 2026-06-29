@@ -78,6 +78,17 @@ flowchart LR
     profile -. Groq writer .-> draft[Message draft]
     draft -. Groq reviewer .-> review[Review result]
     review -. save .-> run[Outreach run artifact]
+    inbound[Inbound reply] -. Groq reply classifier .-> replyclass[Reply classification]
+    replyclass -. save .-> replyartifact[Reply classification artifact]
+    replyclass -. interested/referral .-> scheduler[Scheduling agent\nGroq + business-day slots]
+    scheduler -. save .-> meetingartifact[Meeting proposal artifact]
+    api[FastAPI demo API + web UI] -. calls .-> profile
+    api -. calls .-> replyclass
+    api -. calls .-> scheduler
+    api -. enqueue .-> redis[(Redis queue)]
+    redis -. dequeue .-> worker[RQ worker]
+    worker -. runs .-> profile
+    api -. poll status .-> redis
 ```
 
 ## Data Flow (Ingestion)
@@ -105,9 +116,12 @@ sequenceDiagram
 | --- | --- |
 | Built | Ingestion + enrichment + ICP scoring |
 | Built | PostgreSQL + MongoDB storage |
-| In progress | Pinecone vector memory + research agent (RAG) |
-| In progress | LangGraph outreach workflow |
-| Planned | Reply + scheduling agents + Redis async workers |
+| Built | Pinecone vector memory + Groq research agent (RAG) |
+| Built | LangGraph outreach workflow (`research -> write -> review`) |
+| Built | Reply classification agent |
+| Built | Scheduling agent (meeting proposals) |
+| Built | FastAPI demo API + web UI console |
+| Built | Redis + RQ async workers (background outreach jobs) |
 | Planned | RAGAS evaluation + Langfuse/Phoenix observability |
 | Planned | Docker + cloud deployment + dashboard |
 
@@ -119,6 +133,6 @@ sequenceDiagram
   debuggability. Later, Groq can extract those filters from natural-language
   queries such as "AI founder in Germany" and pass them into the same retrieval
   layer.
-- Wrap the Groq-powered `research -> write -> review` workflow in LangGraph
-  after the node contracts are stable. The current orchestrator is intentionally
-  plain Python so each step can be tested and understood independently.
+- Background outreach jobs now run behind Redis + RQ workers. Next, fold reply
+  triage + scheduling into the LangGraph workflow once the send/wait boundary is
+  added, and move ingestion onto the same queue.

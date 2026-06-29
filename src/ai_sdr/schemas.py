@@ -104,3 +104,37 @@ class OutreachWorkflowRun:
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class ReplyClassification:
+    """Structured intent classification for an inbound prospect reply."""
+
+    intent: str
+    sentiment: str
+    urgency: str
+    confidence: float
+    summary: str
+    recommended_action: str
+    needs_human_review: bool
+    reasons: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class MeetingProposal:
+    """A scheduling agent's proposal in response to an interested reply."""
+
+    lead_id: str
+    should_schedule: bool
+    meeting_type: str
+    duration_minutes: int
+    proposed_slots: list[str] = field(default_factory=list)
+    agenda: list[str] = field(default_factory=list)
+    reply_message: str = ""
+    reasons: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, object]:
+        return asdict(self)
