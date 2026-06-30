@@ -9,8 +9,10 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from ai_sdr.config import SETTINGS
+from ai_sdr.evaluation.outreach import evaluate_outreach_run, run_from_dict
 from ai_sdr.jobs.queue import QueueUnavailable, enqueue, fetch_job_state
 from ai_sdr.memory.search import build_metadata_filter
+from ai_sdr.observability import log_event, read_recent_events
 from ai_sdr.outreach.reply import classify_reply
 from ai_sdr.outreach.scheduling import propose_meeting
 from ai_sdr.outreach.workflow import run_outreach_workflow
@@ -38,6 +40,10 @@ class ScheduleRequest(BaseModel):
     reply_text: str
     lead_id: str = "unknown"
     lead_name: str | None = None
+
+
+class OutreachEvaluationRequest(BaseModel):
+    run: dict[str, Any]
 
 
 @app.get("/api/health")
@@ -69,6 +75,7 @@ def outreach(request: OutreachRequest) -> dict[str, Any]:
         raise HTTPException(status_code=502, detail=str(error)) from error
     if run is None:
         raise HTTPException(status_code=404, detail="No matching lead memory records found.")
+    log_event("outreach_completed", {"lead_id": run.profile.lead_id, "review_score": run.review.score})
     return run.to_dict()
 
 
@@ -80,6 +87,7 @@ def reply(request: ReplyRequest) -> dict[str, Any]:
         classification = classify_reply(request.reply_text)
     except Exception as error:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=str(error)) from error
+    log_event("reply_classified", {"intent": classification.intent, "confidence": classification.confidence})
     return classification.to_dict()
 
 
@@ -101,6 +109,21 @@ def schedule(request: ScheduleRequest) -> dict[str, Any]:
         "classification": classification.to_dict(),
         "proposal": proposal.to_dict(),
     }
+
+
+@app.post("/api/evaluate/outreach")
+def evaluate_outreach(request: OutreachEvaluationRequest) -> dict[str, Any]:
+    try:
+        run = run_from_dict(request.run)
+        evaluation = evaluate_outreach_run(run)
+    except Exception as error:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=str(error)) from error
+    return evaluation.to_dict()
+
+
+@app.get("/api/observability/events")
+def observability_events(limit: int = 20) -> dict[str, Any]:
+    return {"events": read_recent_events(limit=limit)}
 
 
 @app.post("/api/jobs/outreach")

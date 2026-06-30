@@ -113,6 +113,7 @@
       <div class="tab active" data-tab="outreach">1 · Outreach Workflow</div>
       <div class="tab" data-tab="reply">2 · Reply Triage</div>
       <div class="tab" data-tab="schedule">3 · Scheduling</div>
+      <div class="tab" data-tab="evaluate">4 · Evaluation</div>
     </div>
 
     <!-- Outreach -->
@@ -183,9 +184,21 @@
       </div>
       <div class="card out" id="s-out"><p class="placeholder">Results will appear here.</p></div>
     </section>
+
+    <!-- Evaluation -->
+    <section class="grid" data-panel="evaluate" style="display:none">
+      <div class="card">
+        <h2>Quality Evaluation</h2>
+        <p class="hint">Scores the latest outreach run for grounding, personalization, clarity, tone, CTA quality, and risk control.</p>
+        <button class="run" onclick="runEvaluation()">Evaluate latest outreach run</button>
+        <button class="run" onclick="loadEvents()" style="background:linear-gradient(180deg,#314064,#24304c)">Load recent observability events</button>
+      </div>
+      <div class="card out" id="e-out"><p class="placeholder">Run the Outreach Workflow first, then evaluate it here.</p></div>
+    </section>
   </main>
 
   <script>
+    let latestOutreachRun = null;
     const tabs = document.querySelectorAll('.tab');
     tabs.forEach(t => t.addEventListener('click', () => {
       tabs.forEach(x => x.classList.remove('active'));
@@ -260,6 +273,7 @@
       try {
         if (!isAsync) {
           const data = await call('/api/outreach', outreachBody());
+          latestOutreachRun = data;
           el.innerHTML = renderOutreach(data);
           return;
         }
@@ -274,6 +288,7 @@
         if (state.status === 'finished') {
           const result = state.result || {};
           if (result.found === false) { showError(el, result.message || 'No matching lead memory records found.'); return; }
+          latestOutreachRun = result.run;
           el.innerHTML = `<p class="jobstatus">Job <code>${esc(job.job_id)}</code><span class="pill">finished</span></p>` + renderOutreach(result.run);
         } else if (state.status === 'failed') {
           showError(el, state.error || 'Background job failed.');
@@ -312,6 +327,62 @@
         <div class="section-title">Reasons</div>
         ${list(c.reasons)}
       `;
+    }
+
+    function renderEvaluation(e) {
+      const metricRows = Object.entries(e.metrics || {}).map(([name, score]) => `
+        <div class="kv"><span>${esc(name.replaceAll('_', ' '))}: <b>${esc(score)}</b></span></div>
+        <div class="meter"><div style="width:${Math.max(0, Math.min(100, Number(score) || 0))}%"></div></div>
+      `).join('');
+      return `
+        <h2>Evaluation ${e.passed ? '<span class="badge green">passed</span>' : '<span class="badge amber">needs improvement</span>'}</h2>
+        <div class="kv"><span>Overall score: <b>${esc(e.overall_score)}</b></span></div>
+        <div class="meter"><div style="width:${Math.max(0, Math.min(100, Number(e.overall_score) || 0))}%"></div></div>
+        <div class="section-title">Metric Scores</div>
+        ${metricRows}
+        <div class="section-title">Summary</div>
+        <p>${esc(e.summary)}</p>
+        <div class="section-title">Risks</div>
+        ${list(e.risks)}
+        <div class="section-title">Recommendations</div>
+        ${list(e.recommendations)}
+      `;
+    }
+
+    async function runEvaluation() {
+      const el = document.getElementById('e-out');
+      if (!latestOutreachRun) {
+        showError(el, 'Run the Outreach Workflow first, then evaluate the result.');
+        return;
+      }
+      loading(el);
+      try {
+        const evaluation = await call('/api/evaluate/outreach', { run: latestOutreachRun });
+        el.innerHTML = renderEvaluation(evaluation);
+      } catch (e) { showError(el, e.message); }
+    }
+
+    async function loadEvents() {
+      const el = document.getElementById('e-out');
+      loading(el);
+      try {
+        const res = await fetch('/api/observability/events?limit=10');
+        const data = await res.json();
+        const events = data.events || [];
+        if (!events.length) {
+          el.innerHTML = '<p class="placeholder">No observability events recorded yet.</p>';
+          return;
+        }
+        el.innerHTML = `
+          <h2>Recent Observability Events</h2>
+          ${events.reverse().map(event => `
+            <div class="msgbox" style="margin:10px 0">
+              <b>${esc(event.event_type)}</b> · ${esc(event.timestamp)}
+              \n${esc(JSON.stringify(event.payload || {}, null, 2))}
+            </div>
+          `).join('')}
+        `;
+      } catch (e) { showError(el, e.message); }
     }
 
     async function runSchedule() {

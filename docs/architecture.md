@@ -89,6 +89,9 @@ flowchart LR
     redis -. dequeue .-> worker[RQ worker]
     worker -. runs .-> profile
     api -. poll status .-> redis
+    run -. Groq quality eval .-> eval[Outreach evaluation]
+    eval -. event .-> events[Local observability JSONL]
+    api -. reads .-> events
 ```
 
 ## Data Flow (Ingestion)
@@ -122,7 +125,8 @@ sequenceDiagram
 | Built | Scheduling agent (meeting proposals) |
 | Built | FastAPI demo API + web UI console |
 | Built | Redis + RQ async workers (background outreach jobs) |
-| Planned | RAGAS evaluation + Langfuse/Phoenix observability |
+| Built | Outreach quality evaluation + local observability events |
+| Planned | RAGAS + Langfuse/Phoenix adapters |
 | Planned | Docker + cloud deployment + dashboard |
 
 ## TODOs / Deferred Polish
@@ -136,3 +140,5 @@ sequenceDiagram
 - Background outreach jobs now run behind Redis + RQ workers. Next, fold reply
   triage + scheduling into the LangGraph workflow once the send/wait boundary is
   added, and move ingestion onto the same queue.
+- Local evaluation and observability are built for the demo. Add RAGAS dataset
+  runs and Langfuse/Phoenix traces when the evaluation set is stable.

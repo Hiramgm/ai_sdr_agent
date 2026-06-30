@@ -138,3 +138,18 @@ class MeetingProposal:
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class OutreachEvaluation:
+    """Quality evaluation for an outreach workflow run."""
+
+    overall_score: int
+    passed: bool
+    metrics: dict[str, int] = field(default_factory=dict)
+    summary: str = ""
+    risks: list[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, object]:
+        return asdict(self)

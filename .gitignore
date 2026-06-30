@@ -6,3 +6,5 @@ __pycache__/
 .env
 data/raw/*.jsonl
 data/processed/*.jsonl
+reports/evaluations/*.md
+reports/observability/*.jsonl

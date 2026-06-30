@@ -57,7 +57,8 @@ Note: Pinecone and Groq are hosted services on free tiers; the models served are
 - [x] Scheduling agent (meeting proposals from interested replies).
 - [x] FastAPI demo API + web UI console.
 - [x] Redis + RQ async workers (background outreach jobs).
-- [ ] RAGAS message-quality evals + Langfuse/Phoenix observability.
+- [x] Outreach quality evals + local observability events.
+- [ ] RAGAS + Langfuse/Phoenix adapters.
 - [ ] Dockerize, deploy, and dashboard.
 
 ## Ingestion &amp; ICP Scoring
@@ -312,8 +313,30 @@ Then open http://127.0.0.1:8000. The header shows whether `GROQ_API_KEY` and
 - `POST /api/outreach` — research -> write -> review for a lead query (synchronous).
 - `POST /api/reply` — classify an inbound reply.
 - `POST /api/schedule` — triage a reply and, if interested, propose a meeting.
+- `POST /api/evaluate/outreach` — score an outreach workflow run.
+- `GET /api/observability/events` — read recent local observability events.
 - `POST /api/jobs/outreach` — enqueue the outreach workflow as a background job.
 - `GET /api/jobs/{job_id}` — poll a background job's status and result.
+
+## Evaluation + Observability
+
+The first evaluation slice scores a completed outreach run with Groq. It checks
+message quality across six explicit metrics: research grounding,
+personalization, clarity, tone, CTA quality, and risk control.
+
+The evaluator returns a structured `OutreachEvaluation` with an overall score,
+pass/fail, metric scores, risks, and recommendations. API calls also append
+local JSONL events under `reports/observability/events.jsonl`, which the demo UI
+can display from the Evaluation tab.
+
+To evaluate a saved run JSON file from the CLI:
+
+```bash
+python -m ai_sdr.evaluation.outreach path/to/outreach_run.json --save
+```
+
+The current implementation is local and demo-friendly. Full adapters for RAGAS
+datasets and Langfuse/Phoenix tracing remain planned.
 
 ## Async Workers (Redis + RQ)
 
@@ -349,5 +372,5 @@ tab to enqueue the job and watch it move from `queued` to `started` to
 
 ## Next Steps
 
-- Add RAGAS message-quality evals and Langfuse/Phoenix observability.
+- Add RAGAS dataset-backed evaluations and Langfuse/Phoenix tracing adapters.
 - Dockerize the API, worker, and dependencies for one-command deployment.
