@@ -130,8 +130,8 @@ sequenceDiagram
 | Built | Redis + RQ async workers (background outreach jobs) |
 | Built | Outreach quality evaluation + local observability events |
 | Built | Real Ragas Dataset export + local trace spans |
-| Planned | Hosted Langfuse/Phoenix trace exporters |
-| Planned | Docker + cloud deployment + dashboard |
+| Built | Optional Langfuse/Phoenix trace forwarding |
+| Built | Docker Compose deployment (API + worker + Redis + demo UI) |
 
 ## TODOs / Deferred Polish
 
@@ -145,5 +145,5 @@ sequenceDiagram
   triage + scheduling into the LangGraph workflow once the send/wait boundary is
   added, and move ingestion onto the same queue.
 - Real Ragas local dataset export and local trace spans are built for the demo.
-  Add hosted Langfuse/Phoenix exporters when trace routing requirements are
-  stable.
+  Optional hosted forwarding is available when `OBSERVABILITY_SINK=langfuse` or
+  `phoenix` and the corresponding credentials/endpoints are configured.

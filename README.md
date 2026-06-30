@@ -59,8 +59,8 @@ Note: Pinecone and Groq are hosted services on free tiers; the models served are
 - [x] Redis + RQ async workers (background outreach jobs).
 - [x] Outreach quality evals + local observability events.
 - [x] Real Ragas Dataset export + local trace spans.
-- [ ] Hosted Langfuse/Phoenix trace exporters.
-- [ ] Dockerize, deploy, and dashboard.
+- [x] Optional Langfuse/Phoenix trace forwarding.
+- [x] Docker Compose deployment + demo UI dashboard.
 
 ## Ingestion &amp; ICP Scoring
 
@@ -389,7 +389,47 @@ tab to enqueue the job and watch it move from `queued` to `started` to
 `finished` live. Configure the connection with `REDIS_URL` (defaults to
 `redis://localhost:6379/0`).
 
-## Next Steps
+## Docker Deployment
 
-- Add hosted Langfuse/Phoenix trace exporters.
-- Dockerize the API, worker, and dependencies for one-command deployment.
+Run the demo API, background worker, and Redis together with one command:
+
+```bash
+cp .env.example .env   # fill in GROQ_API_KEY and other secrets
+docker compose up --build
+```
+
+Open the demo console at [http://localhost:8000](http://localhost:8000).
+
+Services:
+
+| Service | Role |
+| --- | --- |
+| `api` | FastAPI + demo UI on port 8000 |
+| `worker` | RQ worker (`--simple`) for background outreach jobs |
+| `redis` | Job queue on port 6379 |
+
+`docker-compose.yml` sets `REDIS_URL=redis://redis:6379/0` for the API and worker.
+The `./reports` directory is mounted so evaluations, Ragas datasets, and local
+trace files persist on the host.
+
+Stop the stack with `docker compose down`.
+
+## Hosted Trace Export (Optional)
+
+Local JSONL traces are always written under `reports/observability/`. To also
+forward spans to a hosted sink, set:
+
+```bash
+# Langfuse (https://langfuse.com)
+OBSERVABILITY_SINK=langfuse
+LANGFUSE_HOST=https://cloud.langfuse.com
+LANGFUSE_PUBLIC_KEY=pk-lf-...
+LANGFUSE_SECRET_KEY=sk-lf-...
+
+# Phoenix (custom HTTP endpoint that accepts span JSON)
+OBSERVABILITY_SINK=phoenix
+PHOENIX_ENDPOINT=https://your-phoenix-host/v1/spans
+```
+
+Use `OBSERVABILITY_SINK=hosted` to forward to both when configured. Forwarding
+failures are ignored so the demo keeps working offline.

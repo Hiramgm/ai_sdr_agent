@@ -59,6 +59,8 @@ class Settings:
     redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     observability_sink: str = os.getenv("OBSERVABILITY_SINK", "local")
     langfuse_host: str = os.getenv("LANGFUSE_HOST", "")
+    langfuse_public_key: str = os.getenv("LANGFUSE_PUBLIC_KEY", "")
+    langfuse_secret_key: str = os.getenv("LANGFUSE_SECRET_KEY", "")
     phoenix_endpoint: str = os.getenv("PHOENIX_ENDPOINT", "")
 
 
