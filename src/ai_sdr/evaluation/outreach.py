@@ -9,7 +9,7 @@ from typing import Any
 
 from ai_sdr.config import REPORTS_DIR
 from ai_sdr.llm.groq_client import complete_json
-from ai_sdr.observability import log_event
+from ai_sdr.observability import log_event, trace_span
 from ai_sdr.schemas import (
     OutreachEvaluation,
     OutreachMessageDraft,
@@ -134,6 +134,12 @@ Workflow run:
             "overall_score": evaluation.overall_score,
             "passed": evaluation.passed,
         },
+    )
+    trace_span(
+        "outreach_evaluation",
+        inputs={"lead_id": run.profile.lead_id, "query": run.query},
+        outputs=evaluation.to_dict(),
+        metadata={"metric_count": len(evaluation.metrics)},
     )
     return evaluation
 

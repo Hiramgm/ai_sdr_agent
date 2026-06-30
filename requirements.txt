@@ -25,9 +25,10 @@ uvicorn[standard]
 redis
 rq
 
+# Evaluation framework.
+ragas
+
 # Planned additions, for example:
-# rq
 # playwright
 # beautifulsoup4
-# ragas
 # langfuse

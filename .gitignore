@@ -7,4 +7,6 @@ __pycache__/
 data/raw/*.jsonl
 data/processed/*.jsonl
 reports/evaluations/*.md
+reports/evaluation_datasets/*.jsonl
 reports/observability/*.jsonl
+reports/ragas/

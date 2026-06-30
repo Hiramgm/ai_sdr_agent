@@ -57,6 +57,9 @@ class Settings:
     mongodb_uri: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
     postgres_url: str = os.getenv("POSTGRES_URL", "postgresql://localhost:5432/ai_sdr")
     redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    observability_sink: str = os.getenv("OBSERVABILITY_SINK", "local")
+    langfuse_host: str = os.getenv("LANGFUSE_HOST", "")
+    phoenix_endpoint: str = os.getenv("PHOENIX_ENDPOINT", "")
 
 
 SETTINGS = Settings()

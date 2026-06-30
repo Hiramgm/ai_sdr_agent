@@ -58,7 +58,8 @@ Note: Pinecone and Groq are hosted services on free tiers; the models served are
 - [x] FastAPI demo API + web UI console.
 - [x] Redis + RQ async workers (background outreach jobs).
 - [x] Outreach quality evals + local observability events.
-- [ ] RAGAS + Langfuse/Phoenix adapters.
+- [x] Real Ragas Dataset export + local trace spans.
+- [ ] Hosted Langfuse/Phoenix trace exporters.
 - [ ] Dockerize, deploy, and dashboard.
 
 ## Ingestion &amp; ICP Scoring
@@ -315,6 +316,8 @@ Then open http://127.0.0.1:8000. The header shows whether `GROQ_API_KEY` and
 - `POST /api/schedule` — triage a reply and, if interested, propose a meeting.
 - `POST /api/evaluate/outreach` — score an outreach workflow run.
 - `GET /api/observability/events` — read recent local observability events.
+- `GET /api/observability/traces` — read recent local trace spans.
+- `POST /api/evaluation/ragas-row` — build or save a real Ragas local dataset row.
 - `POST /api/jobs/outreach` — enqueue the outreach workflow as a background job.
 - `GET /api/jobs/{job_id}` — poll a background job's status and result.
 
@@ -335,8 +338,24 @@ To evaluate a saved run JSON file from the CLI:
 python -m ai_sdr.evaluation.outreach path/to/outreach_run.json --save
 ```
 
-The current implementation is local and demo-friendly. Full adapters for RAGAS
-datasets and Langfuse/Phoenix tracing remain planned.
+You can also export a completed outreach run into a real Ragas local dataset,
+following the quickstart `Dataset(..., backend="local/csv")` pattern from the
+[Ragas docs](https://docs.ragas.io/en/stable/getstarted/quickstart/). The row
+uses common fields (`question`, `answer`, `contexts`, `ground_truth`, and
+`metadata`) so it can feed a later Ragas evaluation workflow without changing
+the agent workflow:
+
+```bash
+python -m ai_sdr.evaluation.ragas_export path/to/outreach_run.json
+```
+
+This saves the Ragas dataset under `reports/ragas/` and also writes a debug
+JSONL row under `reports/evaluation_datasets/`. The demo UI's Evaluation tab
+can evaluate the latest outreach run, export it as a Ragas dataset, and inspect
+recent events/traces. Trace spans are stored locally under
+`reports/observability/` and include sink metadata (`OBSERVABILITY_SINK`,
+`LANGFUSE_HOST`, `PHOENIX_ENDPOINT`) so hosted Langfuse/Phoenix exporters can
+be added later.
 
 ## Async Workers (Redis + RQ)
 
@@ -372,5 +391,5 @@ tab to enqueue the job and watch it move from `queued` to `started` to
 
 ## Next Steps
 
-- Add RAGAS dataset-backed evaluations and Langfuse/Phoenix tracing adapters.
+- Add hosted Langfuse/Phoenix trace exporters.
 - Dockerize the API, worker, and dependencies for one-command deployment.

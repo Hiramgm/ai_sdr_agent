@@ -10,9 +10,10 @@ from pydantic import BaseModel
 
 from ai_sdr.config import SETTINGS
 from ai_sdr.evaluation.outreach import evaluate_outreach_run, run_from_dict
+from ai_sdr.evaluation.ragas_export import append_ragas_row, build_ragas_row, save_ragas_dataset
 from ai_sdr.jobs.queue import QueueUnavailable, enqueue, fetch_job_state
 from ai_sdr.memory.search import build_metadata_filter
-from ai_sdr.observability import log_event, read_recent_events
+from ai_sdr.observability import log_event, read_recent_events, read_recent_traces
 from ai_sdr.outreach.reply import classify_reply
 from ai_sdr.outreach.scheduling import propose_meeting
 from ai_sdr.outreach.workflow import run_outreach_workflow
@@ -46,6 +47,13 @@ class OutreachEvaluationRequest(BaseModel):
     run: dict[str, Any]
 
 
+class RagasExportRequest(BaseModel):
+    run: dict[str, Any]
+    evaluation: dict[str, Any] | None = None
+    save: bool = False
+    dataset_name: str = "ai_sdr_outreach"
+
+
 @app.get("/api/health")
 def health() -> dict[str, Any]:
     return {
@@ -54,6 +62,7 @@ def health() -> dict[str, Any]:
         "pinecone_configured": bool(SETTINGS.pinecone_api_key),
         "model": SETTINGS.groq_model,
         "redis_url": SETTINGS.redis_url,
+        "observability_sink": SETTINGS.observability_sink,
     }
 
 
@@ -124,6 +133,27 @@ def evaluate_outreach(request: OutreachEvaluationRequest) -> dict[str, Any]:
 @app.get("/api/observability/events")
 def observability_events(limit: int = 20) -> dict[str, Any]:
     return {"events": read_recent_events(limit=limit)}
+
+
+@app.get("/api/observability/traces")
+def observability_traces(limit: int = 20) -> dict[str, Any]:
+    return {"traces": read_recent_traces(limit=limit)}
+
+
+@app.post("/api/evaluation/ragas-row")
+def ragas_row(request: RagasExportRequest) -> dict[str, Any]:
+    try:
+        run = run_from_dict(request.run)
+        row = build_ragas_row(run, request.evaluation)
+        ragas_root = save_ragas_dataset(row, dataset_name=request.dataset_name) if request.save else None
+        jsonl_path = append_ragas_row(row) if request.save else None
+    except Exception as error:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=str(error)) from error
+    return {
+        "row": row,
+        "ragas_root_dir": str(ragas_root) if ragas_root else None,
+        "jsonl_path": str(jsonl_path) if jsonl_path else None,
+    }
 
 
 @app.post("/api/jobs/outreach")

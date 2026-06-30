@@ -191,7 +191,9 @@
         <h2>Quality Evaluation</h2>
         <p class="hint">Scores the latest outreach run for grounding, personalization, clarity, tone, CTA quality, and risk control.</p>
         <button class="run" onclick="runEvaluation()">Evaluate latest outreach run</button>
+        <button class="run" onclick="exportRagasRow()" style="background:linear-gradient(180deg,#314064,#24304c)">Export real Ragas Dataset</button>
         <button class="run" onclick="loadEvents()" style="background:linear-gradient(180deg,#314064,#24304c)">Load recent observability events</button>
+        <button class="run" onclick="loadTraces()" style="background:linear-gradient(180deg,#314064,#24304c)">Load trace spans</button>
       </div>
       <div class="card out" id="e-out"><p class="placeholder">Run the Outreach Workflow first, then evaluate it here.</p></div>
     </section>
@@ -199,6 +201,7 @@
 
   <script>
     let latestOutreachRun = null;
+    let latestEvaluation = null;
     const tabs = document.querySelectorAll('.tab');
     tabs.forEach(t => t.addEventListener('click', () => {
       tabs.forEach(x => x.classList.remove('active'));
@@ -358,7 +361,32 @@
       loading(el);
       try {
         const evaluation = await call('/api/evaluate/outreach', { run: latestOutreachRun });
+        latestEvaluation = evaluation;
         el.innerHTML = renderEvaluation(evaluation);
+      } catch (e) { showError(el, e.message); }
+    }
+
+    async function exportRagasRow() {
+      const el = document.getElementById('e-out');
+      if (!latestOutreachRun) {
+        showError(el, 'Run the Outreach Workflow first, then export the result.');
+        return;
+      }
+      loading(el);
+      try {
+        const data = await call('/api/evaluation/ragas-row', {
+          run: latestOutreachRun,
+          evaluation: latestEvaluation,
+          save: true,
+          dataset_name: 'ai_sdr_outreach',
+        });
+        el.innerHTML = `
+          <h2>Ragas Dataset exported <span class="badge green">local/csv</span></h2>
+          <div class="kv"><span>Ragas root: ${esc(data.ragas_root_dir || 'not saved')}</span></div>
+          <div class="kv"><span>Debug JSONL: ${esc(data.jsonl_path || 'not saved')}</span></div>
+          <div class="section-title">Dataset Row</div>
+          <div class="msgbox">${esc(JSON.stringify(data.row, null, 2))}</div>
+        `;
       } catch (e) { showError(el, e.message); }
     }
 
@@ -379,6 +407,29 @@
             <div class="msgbox" style="margin:10px 0">
               <b>${esc(event.event_type)}</b> · ${esc(event.timestamp)}
               \n${esc(JSON.stringify(event.payload || {}, null, 2))}
+            </div>
+          `).join('')}
+        `;
+      } catch (e) { showError(el, e.message); }
+    }
+
+    async function loadTraces() {
+      const el = document.getElementById('e-out');
+      loading(el);
+      try {
+        const res = await fetch('/api/observability/traces?limit=10');
+        const data = await res.json();
+        const traces = data.traces || [];
+        if (!traces.length) {
+          el.innerHTML = '<p class="placeholder">No trace spans recorded yet.</p>';
+          return;
+        }
+        el.innerHTML = `
+          <h2>Recent Trace Spans</h2>
+          ${traces.reverse().map(trace => `
+            <div class="msgbox" style="margin:10px 0">
+              <b>${esc(trace.name)}</b> · ${esc(trace.timestamp)} · sink: ${esc(trace.sink)}
+              \n${esc(JSON.stringify({ inputs: trace.inputs, outputs: trace.outputs, metadata: trace.metadata }, null, 2))}
             </div>
           `).join('')}
         `;
@@ -425,6 +476,7 @@
           <span class="chip ${h.pinecone_configured ? 'ok' : 'off'}">Pinecone ${h.pinecone_configured ? 'connected' : 'missing key'}</span>
           <span class="chip">model: ${esc(h.model)}</span>
           <span class="chip">redis: ${esc(h.redis_url)}</span>
+          <span class="chip">observability: ${esc(h.observability_sink)}</span>
         `;
       } catch (e) {
         el.innerHTML = '<span class="chip off">backend unreachable</span>';

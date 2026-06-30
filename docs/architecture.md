@@ -91,7 +91,10 @@ flowchart LR
     api -. poll status .-> redis
     run -. Groq quality eval .-> eval[Outreach evaluation]
     eval -. event .-> events[Local observability JSONL]
+    eval -. export .-> ragasrow[Ragas Dataset\nlocal/csv]
+    eval -. trace .-> traces[Local trace spans]
     api -. reads .-> events
+    api -. reads .-> traces
 ```
 
 ## Data Flow (Ingestion)
@@ -126,7 +129,8 @@ sequenceDiagram
 | Built | FastAPI demo API + web UI console |
 | Built | Redis + RQ async workers (background outreach jobs) |
 | Built | Outreach quality evaluation + local observability events |
-| Planned | RAGAS + Langfuse/Phoenix adapters |
+| Built | Real Ragas Dataset export + local trace spans |
+| Planned | Hosted Langfuse/Phoenix trace exporters |
 | Planned | Docker + cloud deployment + dashboard |
 
 ## TODOs / Deferred Polish
@@ -140,5 +144,6 @@ sequenceDiagram
 - Background outreach jobs now run behind Redis + RQ workers. Next, fold reply
   triage + scheduling into the LangGraph workflow once the send/wait boundary is
   added, and move ingestion onto the same queue.
-- Local evaluation and observability are built for the demo. Add RAGAS dataset
-  runs and Langfuse/Phoenix traces when the evaluation set is stable.
+- Real Ragas local dataset export and local trace spans are built for the demo.
+  Add hosted Langfuse/Phoenix exporters when trace routing requirements are
+  stable.
